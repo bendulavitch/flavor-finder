@@ -227,7 +227,7 @@ mutations: {
 ​
 When you reach the `/register` route, you'll see a bare registration page. Like the login page, this is intentional. You'll need to style this page to fit within your application.
 ​
-When you fill in a username, password, confirm the password role, and click the "Create Account" button, the method `register()` is called. This calls the `register()` method in `src/services/AuthService.js`. This passes your user details to your back-end application's REST API to create a new user:
+When you fill in a username, password, confirm the password role, and click the "Create Account" button, the method `register()` is called. This calls the `register()` method in `src/services/AuthService.js`. This passes your user details to your back-end application's REST API to create a new user: hi
 ​
 ```js
 // src/views/RegisterView.vue
