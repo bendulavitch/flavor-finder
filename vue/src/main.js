@@ -1,29 +1,25 @@
-import { createApp } from 'vue'
-import CapstoneApp from './App.vue'
-import { createStore } from './store'
-import router from './router'
-import axios from 'axios'
+import { createApp } from 'vue';
+import CapstoneApp from './App.vue';
+import { createStore } from './store';
+import router from './router';
+import axios from 'axios';
 
-/* sets the base url for server API communication with axios */
+/* Set base URL for Axios */
 axios.defaults.baseURL = import.meta.env.VITE_REMOTE_API;
 
-/*
- * The authorization header is set for axios when you login but what happens when 
- * you come back or the page is refreshed. When that happens you need to check 
- * for the token in local storage and if it exists you should set the header 
- * so that it will be attached to each request.
- */
-let currentToken = localStorage.getItem('token');
-let currentUser = JSON.parse(localStorage.getItem('user'));
+/* Retrieve stored token and user */
+const currentToken = localStorage.getItem('token');
+const currentUser = JSON.parse(localStorage.getItem('user'));
 
 if (currentToken) {
-  // Set token axios requests
+  // Set the Authorization header
   axios.defaults.headers.common['Authorization'] = `Bearer ${currentToken}`;
 }
 
-// Create the Vuex store passing in the stored credentials
+// Create the Vuex store with credentials
 const store = createStore(currentToken, currentUser);
 
+// Create and mount the Vue app
 const app = createApp(CapstoneApp);
 app.use(store);
 app.use(router);
