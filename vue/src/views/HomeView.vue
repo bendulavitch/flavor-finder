@@ -19,7 +19,7 @@
 
 <script>
 import { mapState } from 'vuex';
-import RestaurantCard from '@/components/RestaurantCard.vue';
+import RestaurantCard from '../components/RestaurantCard.vue';
 
 export default {
   components: { RestaurantCard },
