@@ -9,13 +9,32 @@
       <div
         v-for="(restaurant, index) in filteredRestaurants"
         :key="restaurant.id"
-        class="restaurant-card"
+        class="restaurant-card-wrapper"
         :style="getCardStyle(index)"
         ref="cards"
       >
         <RestaurantCard :restaurant="restaurant" />
       </div>
     </div>
+
+    <!-- Slide-Out Messaging Panel -->
+    <div id="messaging-panel" :class="{ visible: isMessagingOpen }">
+      <header class="messaging-header">
+        <h3>Inbox</h3>
+        <button @click="toggleMessaging" class="close-btn">X</button>
+      </header>
+      <div class="messaging-content">
+        <ul class="message-list">
+          <li v-for="message in messages" :key="message.id" @click="openChat(message.id)">
+            <h4>{{ message.title }}</h4>
+            <p>{{ message.preview }}</p>
+          </li>
+        </ul>
+        <button class="new-chat-btn" @click="createNewChat">+ New Chat</button>
+      </div>
+    </div>
+    <!-- Open Messaging Button -->
+    <button id="open-messaging-btn" @click="toggleMessaging">Messages</button>
   </div>
 </template>
 
@@ -27,6 +46,11 @@ export default {
   data() {
     return {
       searchQuery: '',
+      isMessagingOpen: false,
+      messages: [
+        { id: 1, title: "Group 1", preview: "Last message in Group 1" },
+        { id: 2, title: "Group 2", preview: "Last message in Group 2" },
+      ],
       restaurants: [
         {
           id: '1',
@@ -84,6 +108,10 @@ export default {
           cuisine: 'Euro-Bistro',
         },
       ],
+      isDragging: false,
+      startX: 0,
+      currentX: 0,
+      activeIndex: 0,
     };
   },
   computed: {
@@ -93,86 +121,71 @@ export default {
       );
     },
   },
-  watch: {
-    restaurants: {
-      handler() {
-        this.reinitializeListeners(); // Reattach listeners when restaurants array changes
-      },
-      deep: true,
-    },
-  },
+  
   methods: {
     surpriseMe() {
       const randomIndex = Math.floor(Math.random() * this.restaurants.length);
       alert(`How about ${this.restaurants[randomIndex].name}?`);
     },
     getCardStyle(index) {
+      if (index === this.activeIndex) {
+        return { zIndex: 100, transform: "translateX(0)", opacity: 1 };
+      }
       return {
-        zIndex: this.restaurants.length - index,
-        transform: index === 0 ? 'translateX(0)' : 'translateY(10px) scale(0.95)',
-        opacity: index === 0 ? 1 : 0.8,
+        zIndex: this.filteredRestaurants.length - index,
+        transform: `translateY(${10 * index}px) scale(${1 - index * 0.05})`,
+        opacity: 0.8 - index * 0.1,
       };
     },
-    handleSwipe(index, direction) {
-      console.log(`Restaurant ${this.restaurants[index].id} swiped ${direction}`);
-      this.restaurants.splice(index, 1); // Remove the swiped restaurant
+    toggleMessaging() {
+      this.isMessagingOpen = !this.isMessagingOpen;
     },
-    addDragListeners() {
-      const cards = Array.from(this.$refs.cards);
-      if (cards.length === 0) return;
-
-      const topCard = cards[0]; // Only attach listeners to the top card
-      let startX = 0;
-      let currentX = 0;
-      let isDragging = false;
-
-      const handleMouseDown = (e) => {
-        startX = e.clientX;
-        isDragging = true;
-        topCard.style.transition = 'none'; // Disable transitions while dragging
-      };
-
-      const handleMouseMove = (e) => {
-        if (!isDragging) return;
-        currentX = e.clientX - startX;
-        topCard.style.transform = `translateX(${currentX}px) rotate(${currentX / 20}deg)`;
-      };
-
-      const handleMouseUp = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        topCard.style.transition = 'transform 0.3s ease';
-
-        if (currentX > 100) {
-          // Swipe right
-          this.handleSwipe(0, 'right');
-        } else if (currentX < -100) {
-          // Swipe left
-          this.handleSwipe(0, 'left');
-        } else {
-          // Reset position
-          topCard.style.transform = 'translateX(0) rotate(0)';
-        }
-      };
-
-      topCard.addEventListener('mousedown', handleMouseDown);
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-
-      // Cleanup previous listeners to avoid duplication
-      this.cleanupListeners = () => {
-        topCard.removeEventListener('mousedown', handleMouseDown);
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
+    openChat(chatId) {
+      alert(`Opening chat with ID: ${chatId}`);
     },
-    reinitializeListeners() {
-      if (this.cleanupListeners) this.cleanupListeners(); // Cleanup existing listeners
-      this.addDragListeners(); // Add listeners for the new top card
+    createNewChat() {
+      alert('Creating a new chat...');
+    },
+    handleMouseDown(e) {
+      this.startX = e.clientX;
+      this.isDragging = true;
+    },
+    handleMouseMove(e) {
+      if (!this.isDragging) return;
+      this.currentX = e.clientX - this.startX;
+      const topCard = this.$refs.cards[this.activeIndex];
+      if (topCard) {
+        topCard.style.transition = "none";
+        topCard.style.transform = `translateX(${this.currentX}px) rotate(${this.currentX / 20}deg)`;
+      }
+    },
+    handleMouseUp() {
+      if (!this.isDragging) return;
+      this.isDragging = false;
+      const topCard = this.$refs.cards[this.activeIndex];
+      if (!topCard) return;
+
+      if (this.currentX > 100) {
+        // Swipe right
+        this.restaurants.splice(this.activeIndex, 1);
+      } else if (this.currentX < -100) {
+        // Swipe left
+        this.restaurants.splice(this.activeIndex, 1);
+      } else {
+        // Reset position
+        topCard.style.transition = "transform 0.3s ease";
+        topCard.style.transform = "translateX(0) rotate(0)";
+      }
+      this.currentX = 0;
     },
   },
   mounted() {
-    this.addDragListeners(); // Initialize drag listeners
+    const cards = this.$refs.cards;
+    cards.forEach((card) => {
+      card.addEventListener("mousedown", this.handleMouseDown);
+      document.addEventListener("mousemove", this.handleMouseMove);
+      document.addEventListener("mouseup", this.handleMouseUp);
+    });
   },
 };
 </script>
@@ -222,20 +235,112 @@ export default {
   overflow: hidden;
 }
 
-.restaurant-card {
+.restaurant-card-wrapper {
   position: absolute;
   width: 300px;
   max-width: 100%;
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  background: white; /* Prevent overlapping text visibility */
+  background: white;
   transition: transform 0.3s ease, opacity 0.3s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
 }
 
-.restaurant-card:hover {
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+.restaurant-card-wrapper:not(:nth-child(1)) {
+  visibility: hidden; /* Hide cards beneath to prevent overlapping content */
 }
+
+.restaurant-card-wrapper.active {
+  visibility: visible;
+}
+
+/* Slide-Out Messaging Panel */
+#messaging-panel {
+  position: fixed;
+  top: 0;
+  right: -300px; /* Initially hidden */
+  width: 300px;
+  height: 100%;
+  background-color: #fff7ed; /* Light cream */
+  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+  transition: right 0.3s ease-in-out; /* Slide-in animation */
+  z-index: 1001;
+}
+
+#messaging-panel.visible {
+  right: 0; /* Slide into view */
+}
+
+.messaging-header {
+  background-color: #c88f67; /* Muted orange */
+  color: white;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.messaging-content {
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.message-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.message-list li {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f9f1e7; /* Soft beige */
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.message-list li:hover {
+  background-color: #e0c9a6; /* Hover effect */
+}
+
+.new-chat-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #c88f67; /* Muted orange */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.new-chat-btn:hover {
+  background-color: #a56d4e; /* Darker orange */
+}
+
+/* Open Messaging Button */
+#open-messaging-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background-color: #c88f67; /* Muted orange */
+  color: white;
+  padding: 10px 15px;
+  border-radius: 50%;
+  border: none;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.3s;
+}
+
+#open-messaging-btn:hover {
+  transform: scale(1.1);
+  background-color: #a56d4e; /* Darker orange */
+}
+
 </style>

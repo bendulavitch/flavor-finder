@@ -158,7 +158,7 @@ export default {
 }
 
 #hero h1 .highlight {
-  color: #ed8f7b; /* Gold color to emphasize 'Flavor Finder' */
+  color: #ca6b28; /* Gold color to emphasize 'Flavor Finder' */
 }
 
 .hero-subheading {
@@ -180,7 +180,7 @@ export default {
 
 .btn-primary {
   padding: 12px 24px;
-  background-color: #ed8f7b; /* Gold button color to match theme */
+  background-color: #ca6b28; /* Gold button color to match theme */
   color: #000; /* Black text for contrast */
   font-weight: bold;
   text-decoration: none;

@@ -6,6 +6,10 @@ import HomeView from '../views/HomeView.vue';
 import LoginView from '../views/LoginView.vue';
 import LogoutView from '../views/LogoutView.vue';
 import RegisterView from '../views/RegisterView.vue';
+import AboutView from '../views/AboutView.vue';
+import ContactView from '../views/ContactView.vue';
+import TermsView from '../views/TermsView.vue';
+import FavoritesView from '../views/FavoritesView.vue';
 
 /**
  * The Vue Router is used to "direct" the browser to render a specific view component
@@ -47,6 +51,38 @@ const routes = [
     meta: {
       requiresAuth: false
     }
+  },
+  {
+    path: "/about",
+    name: "about",
+    component: AboutView,
+    meta: {
+      requiresAuth: false
+    }
+  },
+  {
+    path: "/contact",
+    name: "contact",
+    component: ContactView,
+    meta: {
+      requiresAuth: false
+    }
+  },
+  {
+    path: "/terms",
+    name: "terms",
+    component: TermsView,
+    meta: {
+      requiresAuth: false
+    }
+  },
+  {
+    path: "/favorites",
+    name: "favorites",
+    component: FavoritesView,
+    meta: {
+      requiresAuth: true
+    }
   }
 ];
 
@@ -56,19 +92,16 @@ const router = createRouter({
   routes: routes
 });
 
-router.beforeEach((to) => {
+router.beforeEach((to, from, next) => {
+  const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
+  const isAuthenticated = !!localStorage.getItem("token");
 
-  // Get the Vuex store
-  const store = useStore();
-
-  // Determine if the route requires Authentication
-  const requiresAuth = to.matched.some(x => x.meta.requiresAuth);
-
-  // If it does and they are not logged in, send the user to "/login"
-  if (requiresAuth && store.state.token === '') {
-    return {name: "login"};
+  if (requiresAuth && !isAuthenticated) {
+    next({ name: "login" });
+  } else {
+    next();
   }
-  // Otherwise, do nothing and they'll go to their next destination
+  
 });
 
 export default router;

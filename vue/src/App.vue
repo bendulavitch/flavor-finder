@@ -6,31 +6,74 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <nav>
   <div class="logo">
-    <a href="index.html">Flavor Finder</a>
+    <a href="/">Flavor Finder</a>
   </div>
   <ul class="nav-links">
     <li>
       <router-link v-bind:to="{ name: 'home' }">Home</router-link>
     </li>
     <li>
-      <router-link v-bind:to="{ name: 'home' }">Messaging</router-link>
+      <router-link v-bind:to="{ name: 'favorites' }">Favorites</router-link>
     </li>
-    <li>
+    <li v-if="isAuthenticated">
+          <span class="user-indicator">Welcome, {{ username }}</span>
+        </li>
+    <li v-else>
       <router-link v-bind:to="{ name: 'login' }">Login</router-link>
     </li>
     <li>
-      <router-link v-bind:to="{ name: 'logout' }">Log Out</router-link>
+      <button @click="logout" class="nav-link btn-logout">Log Out</button>
     </li>
   </ul>
+  
 </nav>
 
     </header>
     <router-view />
 
+    <footer id="footer">
+      <div class="footer-container">
+        <div class="footer-section">
+          <h3>Flavor Finder</h3>
+          <p>Discover your next favorite restaurant effortlessly.</p>
+        </div>
+        <div class="footer-section">
+          <h3>Quick Links</h3>
+          <ul>
+            <li><router-link v-bind:to="{ name: 'home' }">Home</router-link></li>
+            <li><router-link v-bind:to="{ name: 'about' }">About</router-link></li>
+            <li><router-link v-bind:to="{ name: 'contact' }">Contact</router-link></li>
+            <li><router-link v-bind:to="{ name: 'terms' }">Terms & Conditions</router-link></li>
+          </ul>
+        </div>
+        <div class="footer-section">
+          <h3>Contact Us</h3>
+          <p>Email: support@flavorfinder.com</p>
+          <p>Phone: (555) 123-4567</p>
+          <div class="social-icons">
+            <a href="#"><i class="fab fa-facebook"></i></a>
+            <a href="#"><i class="fab fa-twitter"></i></a>
+            <a href="#"><i class="fab fa-instagram"></i></a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2024 Flavor Finder. All rights reserved.</p>
+      </div>
+    </footer>
+  
 </template>
 
 <script>
 export default {
+  computed: {
+    isAuthenticated() {
+      return this.$store.state.token !== ''; // Check if token exists
+    },
+    username() {
+      return this.$store.state.user?.username || 'Guest'; // Display username or default to 'Guest'
+    },
+  },
   data() {
     return {
       theme: localStorage.getItem('theme') || 'light',
@@ -41,11 +84,17 @@ export default {
       this.theme = this.theme === 'light' ? 'dark' : 'light';
       localStorage.setItem('theme', this.theme);
     },
+    logout() {
+      this.$store.commit("LOGOUT");
+      this.$router.push("/logout");
+    },
   },
 };
 </script>
+
+
 <!-- Nav Bar CSS -->
-<style>
+<style scoped>
 /* General Body Styling */
 body {
   background-color: #fff7ed; /* Light cream background */
@@ -87,6 +136,7 @@ nav .logo a {
 /* Nav Links Container */
 nav ul {
   display: flex; /* Flexbox layout for horizontal alignment */
+  align-items: center; /* Vertically align items */
   list-style: none; /* Remove default bullet points */
   gap: 20px; /* Space between links */
   margin: 0; /* Remove default margin */
@@ -94,18 +144,32 @@ nav ul {
 }
 
 /* Nav Links Styling */
-nav ul li a {
-  color: #5c5c5c; 
-  text-decoration: none; 
-  font-size: 1.2em; 
-  font-family: "Lato", sans-serif; 
-  padding: 10px 15px; 
-  border-radius: 5px; 
-  transition: background-color 0.3s, color 0.3s; 
+nav ul li a
+ {
+  color: #5c5c5c; /* Muted dark gray text */
+  text-decoration: none; /* Remove underline */
+  font-size: 1.2em; /* Match font size */
+  font-family: "Lato", sans-serif; /* Consistent font */
+  padding: 10px 15px; /* Add consistent padding */
+  border-radius: 5px; /* Rounded corners for both links and button */
+  background: none; /* Remove default button background */
+  border: none; /* Remove default button border */
+  cursor: pointer; /* Pointer cursor for both links and button */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+  display: flex; /* Ensure uniform flex behavior */
+  align-items: center; /* Vertical alignment within each element */
 }
 
+.user-indicator {
+  color: #c88f67; /* Muted orange color */
+  font-weight: bold;
+  font-size: 1.1em;
+  margin-left: 10px;
+}
+
+
 /* Hover Effect */
-nav ul li a:hover {
+nav ul li a:hover{
   background-color: #e0c9a6; 
   color: #ffffff; 
 }
@@ -116,6 +180,101 @@ nav ul li a.router-link-active {
   color: #ffffff; /* White text for active link */
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Highlight active with shadow */
 }
+
+/* Logout Button Styling */
+.btn-logout {
+  color: #5c5c5c; /* Muted dark gray text */
+  text-decoration: none; /* Remove underline */
+  font-size: 1.2em; /* Match font size of nav links */
+  font-family: "Lato", sans-serif; /* Same font as nav links */
+  padding: 10px 15px; /* Same padding for alignment */
+  border-radius: 5px; /* Rounded corners for consistency */
+  background: none; /* Remove default button background */
+  border: none; /* Remove default button border */
+  cursor: pointer; /* Pointer cursor for buttons */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transitions */
+}
+
+/* Hover Effect for Logout Button */
+.btn-logout:hover {
+  background-color: #e0c9a6; /* Same hover background as nav links */
+  color: #ffffff; /* White text on hover */
+}
+
+
+/* Footer Styles */
+#footer {
+  background-color: #fff7ed; /* Light cream background */
+  color: #5c5c5c; /* Muted dark gray text */
+  padding: 40px 20px;
+  font-family: 'Poppins', sans-serif;
+  border-top: 1px solid #e0c9a6; /* Subtle top border */
+}
+
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap; /* Make footer responsive */
+  gap: 20px;
+}
+
+.footer-section {
+  flex: 1;
+  min-width: 200px; /* Minimum width for sections */
+}
+
+.footer-section h3 {
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+  color: #c88f67; /* Muted orange for section titles */
+}
+
+.footer-section p,
+.footer-section ul,
+.footer-section ul li {
+  font-size: 1rem;
+  margin: 5px 0;
+}
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section ul li {
+  margin-bottom: 8px;
+}
+
+.footer-section ul li a {
+  text-decoration: none;
+  color: #5c5c5c; /* Muted gray for links */
+  transition: color 0.3s ease;
+}
+
+.footer-section ul li a:hover {
+  color: #c88f67; /* Orange hover effect */
+}
+
+.social-icons a {
+  margin-right: 10px;
+  color: #5c5c5c;
+  font-size: 1.2rem;
+  transition: color 0.3s ease;
+}
+
+.social-icons a:hover {
+  color: #c88f67;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 20px;
+  border-top: 1px solid #e0c9a6;
+  padding-top: 10px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
@@ -129,6 +288,11 @@ nav ul li a.router-link-active {
     text-align: center; /* Center-align logo on smaller screens */
     width: 100%; /* Full width for logo */
     margin-bottom: 10px; /* Add space below logo */
+  }
+  .nav-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px; /* Adjust spacing */
   }
 }
 
