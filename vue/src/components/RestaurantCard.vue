@@ -1,17 +1,31 @@
 <template>
   <div class="restaurant-card">
-    <img :src="restaurant.image" alt="Restaurant Image" class="restaurant-image" />
+    <img 
+      :src="restaurant.image || 'ben.jpg'" 
+      alt="Restaurant Image" 
+      class="restaurant-image" 
+    />
     <div class="restaurant-details">
       <h2>{{ restaurant.name }}</h2>
-      <div class="rating-price">
-        <span class="rating">⭐ {{ restaurant.rating }}</span>
-        <span class="price">{{ "$".repeat(restaurant.price || 0) }}</span>
+      <p class="address">{{ restaurant.address }}</p>
+      <div class="rating-section">
+        <span v-if="restaurant.rating" class="rating">⭐ {{ restaurant.rating }}</span>
+        <span v-else>No Rating Available</span>
       </div>
-      <p>{{ restaurant.distance.toFixed(1) }} miles away</p>
-      <p v-if="restaurant.kidFriendly">Kid-Friendly</p>
-      <p :class="{ open: restaurant.isOpenNow, closed: !restaurant.isOpenNow }">
-        {{ restaurant.isOpenNow ? "Open Now" : "Closed" }}
+      <p v-if="restaurant.cityName && restaurant.stateName">
+        {{ restaurant.cityName }}, {{ restaurant.stateName }}
       </p>
+      <p v-if="restaurant.phone">📞 {{ restaurant.phone }}</p>
+      <a 
+        v-if="restaurant.website" 
+        :href="restaurant.website" 
+        target="_blank" 
+        class="website-link"
+      >
+        Visit Website
+      </a>
+      <p v-if="restaurant.cuisineType">Cuisine: {{ restaurant.cuisineType }}</p>
+      <p v-if="restaurant.hoursInterval">Hours: {{ restaurant.hoursInterval }}</p>
     </div>
   </div>
 </template>
@@ -36,6 +50,7 @@ export default {
   text-align: center;
   max-width: 400px;
   margin: auto;
+  background-color: #fff; /* Optional: Add background for better readability */
 }
 .restaurant-image {
   width: 100%;
@@ -45,16 +60,27 @@ export default {
 .restaurant-details {
   padding: 1rem;
 }
-.rating-price {
+.rating-section {
   display: flex;
-  justify-content: space-between;
-  font-size: 0.9rem;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem;
   margin: 0.5rem 0;
 }
-.open {
-  color: green;
+.website-link {
+  display: inline-block;
+  color: #007bff;
+  text-decoration: none;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  font-weight: bold;
 }
-.closed {
-  color: red;
+.website-link:hover {
+  text-decoration: underline;
+}
+.address {
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  color: #555;
 }
 </style>

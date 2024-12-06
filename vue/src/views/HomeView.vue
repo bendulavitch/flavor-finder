@@ -1,11 +1,48 @@
 <template>
   <div class="home-view">
-    <h2>Find Your Next Favorite Restaurant</h2>
+    <h2>Find Restaurants Near You</h2>
+    <div class="filters">
+      <!-- Location Filters for Zip Code or City/State -->
+      <div v-if="useZipCode">
+        <input
+          type="text"
+          v-model="zipCode"
+          placeholder="Enter Zip Code"
+          @input="clearError"
+        />
+      </div>
+      <div v-else>
+        <input
+          type="text"
+          v-model="city"
+          placeholder="Enter City"
+          @input="clearError"
+        />
+        <input
+          type="text"
+          v-model="state"
+          placeholder="Enter State"
+          maxlength="2"
+          @input="clearError"
+        />
+      </div >
+      <button class="filters" @click="toggleLocationType">
+        {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
+      </button>
+      <button class="filters" @click="fetchRestaurants">Search</button>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+    <!-- Filters for Searching Restaurants -->
     <div class="filters">
       <input type="text" v-model="searchQuery" placeholder="Search restaurants..." />
-      <button @click="surpriseMe">Surprise Me!</button>
+      <button @click="surpriseMe" :disabled="!restaurants.length">Surprise Me!</button>
     </div>
-    <div class="stack-interface">
+
+    <!-- Restaurant Card Stack -->
+    <div v-if="restaurants.length" class="stack-interface">
       <div
         v-for="(restaurant, index) in filteredRestaurants"
         :key="restaurant.id"
@@ -16,6 +53,10 @@
         <RestaurantCard :restaurant="restaurant" />
       </div>
     </div>
+    <div v-else-if="!isLoading && hasSearched" class="no-results">
+      No restaurants found. Try another search.
+    </div>
+    <div v-if="isLoading" class="loading">Loading restaurants...</div>
 
     <!-- Slide-Out Messaging Panel -->
     <div id="messaging-panel" :class="{ visible: isMessagingOpen }">
@@ -39,79 +80,31 @@
 </template>
 
 <script>
-import RestaurantCard from '../components/RestaurantCard.vue';
+import RestaurantCard from "../components/RestaurantCard.vue";
 
 export default {
   components: { RestaurantCard },
   data() {
     return {
-      searchQuery: '',
+      searchQuery: "",
       isMessagingOpen: false,
       messages: [
         { id: 1, title: "Group 1", preview: "Last message in Group 1" },
         { id: 2, title: "Group 2", preview: "Last message in Group 2" },
       ],
-      restaurants: [
-        {
-          id: '1',
-          name: 'The Tasty Spoon',
-          image: '../images/spoon.jpg',
-          rating: 4.5,
-          price: 2,
-          isKidFriendly: true,
-          isOpenNow: true,
-          distance: 1.2,
-          cuisine: 'Italian',
-        },
-        {
-          id: '2',
-          name: 'Burger Bliss',
-          image: '../images/burger.jpg',
-          rating: 4.2,
-          price: 1,
-          isKidFriendly: false,
-          isOpenNow: false,
-          distance: 2.8,
-          cuisine: 'American',
-        },
-        {
-          id: '3',
-          name: 'Sushi Heaven',
-          image: '../images/sushi.jpg',
-          rating: 4.8,
-          price: 3,
-          isKidFriendly: true,
-          isOpenNow: true,
-          distance: 0.5,
-          cuisine: 'Japanese',
-        },
-        {
-          id: '4',
-          name: 'Bens Buffet',
-          image: '../images/ben.jpg',
-          rating: 2.1,
-          price: 3,
-          isKidFriendly: true,
-          isOpenNow: true,
-          distance: 0.5,
-          cuisine: 'Chinese',
-        },
-        {
-          id: '5',
-          name: 'Karyns Cafe',
-          image: '../images/karyn.jpg',
-          rating: 4.8,
-          price: 4,
-          isKidFriendly: false,
-          isOpenNow: false,
-          distance: 0.5,
-          cuisine: 'Euro-Bistro',
-        },
-      ],
+      restaurants: [],
       isDragging: false,
       startX: 0,
       currentX: 0,
       activeIndex: 0,
+      // New properties for location input
+      useZipCode: true,
+      zipCode: "",
+      city: "",
+      state: "",
+      isLoading: false,
+      hasSearched: false,
+      errorMessage: "", // To display user-friendly errors
     };
   },
   computed: {
@@ -121,9 +114,62 @@ export default {
       );
     },
   },
-  
   methods: {
+    toggleLocationType() {
+      this.useZipCode = !this.useZipCode;
+      this.zipCode = "";
+      this.city = "";
+      this.state = "";
+      this.clearError();
+    },
+    clearError() {
+      this.errorMessage = "";
+    },
+    fetchRestaurants() {
+      this.errorMessage = "";
+      this.isLoading = true;
+      this.hasSearched = true;
+
+      // Validate Input
+      if (this.useZipCode && !this.zipCode.trim()) {
+        this.errorMessage = "Please enter a valid Zip Code.";
+        this.isLoading = false;
+        return;
+      } else if (!this.useZipCode && (!this.city.trim() || !this.state.trim())) {
+        this.errorMessage = "Please enter a valid City and State.";
+        this.isLoading = false;
+        return;
+      }
+
+      const queryType = this.useZipCode ? "zipcode" : "city";
+      const queryValue = this.useZipCode
+        ? this.zipCode.trim()
+        : `${this.city.trim()},${this.state.trim()}`;
+
+      fetch(
+        `http://localhost:9000/api/restaurants/fetch?queryType=${queryType}&queryValue=${queryValue}`
+      )
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to fetch restaurants");
+          }
+          return response.json();
+        })
+        .then((data) => {
+          this.restaurants = data;
+          if (!data.length) {
+            this.errorMessage = "No restaurants found. Try another search.";
+          }
+          this.isLoading = false;
+        })
+        .catch((error) => {
+          console.error("Error fetching restaurants:", error);
+          this.errorMessage = "An error occurred while fetching restaurants.";
+          this.isLoading = false;
+        });
+    },
     surpriseMe() {
+      if (!this.restaurants.length) return;
       const randomIndex = Math.floor(Math.random() * this.restaurants.length);
       alert(`How about ${this.restaurants[randomIndex].name}?`);
     },
@@ -144,7 +190,7 @@ export default {
       alert(`Opening chat with ID: ${chatId}`);
     },
     createNewChat() {
-      alert('Creating a new chat...');
+      alert("Creating a new chat...");
     },
     handleMouseDown(e) {
       this.startX = e.clientX;
@@ -178,17 +224,34 @@ export default {
       }
       this.currentX = 0;
     },
+    attachCardListeners() {
+      const cards = this.$refs.cards || [];
+      cards.forEach((card) => {
+        if (card) {
+          card.addEventListener("mousedown", this.handleMouseDown);
+          document.addEventListener("mousemove", this.handleMouseMove);
+          document.addEventListener("mouseup", this.handleMouseUp);
+        }
+      });
+    },
+  },
+  watch: {
+    restaurants(newRestaurants) {
+      if (newRestaurants.length) {
+        // Attach listeners when restaurants are updated
+        this.$nextTick(() => {
+          this.attachCardListeners();
+        });
+      }
+    },
   },
   mounted() {
-    const cards = this.$refs.cards;
-    cards.forEach((card) => {
-      card.addEventListener("mousedown", this.handleMouseDown);
-      document.addEventListener("mousemove", this.handleMouseMove);
-      document.addEventListener("mouseup", this.handleMouseUp);
-    });
+    this.attachCardListeners();
   },
 };
+
 </script>
+
 
 <style scoped>
 .home-view {
@@ -197,34 +260,53 @@ export default {
   margin: 0 auto;
 }
 
+/* Filters Section */
 .filters {
   display: flex;
-  justify-content: space-between;
+  flex-direction: column; /* Adjusted for vertical layout with location input */
+  gap: 1rem;
   margin-bottom: 1rem;
 }
 
-.filters input {
-  flex: 1;
-  margin-right: 1rem;
-  padding: 0.5rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+.filters .location-inputs {
+  display: flex;
+  flex-wrap: wrap; /* Wrap inputs on smaller screens */
+  gap: 1rem;
 }
 
 .filters button {
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: bold;
+  background-color: #f49f0a; /* Attractive orange */
+  color: #fff;
   border: none;
-  border-radius: 4px;
-  background-color: #007bff;
-  color: white;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
 }
 
 .filters button:hover {
-  background-color: #0056b3;
+  background-color: #d9890c; /* Darker orange */
+  transform: scale(1.05);
 }
 
+.filters input {
+  padding: 0.6rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: calc(100% - 2rem); /* Ensure proper width with padding */
+}
+/* Loading Indicator */
+.filters .loading-indicator {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #555;
+}
+
+/* Stack Interface */
 .stack-interface {
   position: relative;
   width: 100%;
@@ -235,6 +317,7 @@ export default {
   overflow: hidden;
 }
 
+/* Restaurant Card Wrapper */
 .restaurant-card-wrapper {
   position: absolute;
   width: 300px;
@@ -342,5 +425,4 @@ export default {
   transform: scale(1.1);
   background-color: #a56d4e; /* Darker orange */
 }
-
 </style>
