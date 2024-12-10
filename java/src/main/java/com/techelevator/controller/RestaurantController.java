@@ -29,11 +29,6 @@ public class RestaurantController {
         return ResponseEntity.ok(restaurants);
     }
 
-    @PostMapping("/favorites")
-    public ResponseEntity<Void> addFavorite(@RequestBody FavoriteRequest request) {
-        restaurantService.addFavorite(request.getUserId(), request.getRestaurantId());
-        return ResponseEntity.ok().build();
-    }
 
     @PostMapping("/skipped")
     public ResponseEntity<Void> skipRestaurant(@RequestBody SkipRequest request) {

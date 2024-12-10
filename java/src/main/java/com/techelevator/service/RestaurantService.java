@@ -25,9 +25,6 @@ public class RestaurantService {
         return restaurantApiService.fetchRestaurantsFromApi(queryType, queryValue);
     }
 
-    public void addFavorite(int userId, int restaurantId) {
-        restaurantDao.addFavorite(userId, restaurantId);
-    }
 
     public void skipRestaurant(int userId, int restaurantId) {
         restaurantDao.skipRestaurant(userId, restaurantId);

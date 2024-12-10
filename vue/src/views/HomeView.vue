@@ -97,7 +97,6 @@ export default {
       startX: 0,
       currentX: 0,
       activeIndex: 0,
-      // New properties for location input
       useZipCode: true,
       zipCode: "",
       city: "",
@@ -112,6 +111,9 @@ export default {
       return this.restaurants.filter((r) =>
         r.name.toLowerCase().includes(this.searchQuery.toLowerCase())
       );
+    },
+    isAuthenticated() {
+      return this.$store.state.token !== ""; // Check if the user is authenticated
     },
   },
   methods: {
@@ -212,10 +214,12 @@ export default {
       if (!topCard) return;
 
       if (this.currentX > 100) {
-        // Swipe right
+        // Swipe right to add to favorites
+        const favoritedRestaurant = this.restaurants[this.activeIndex];
+        this.addToFavorites(favoritedRestaurant.endpoint); // Pass the endpoint
         this.restaurants.splice(this.activeIndex, 1);
       } else if (this.currentX < -100) {
-        // Swipe left
+        // Swipe left to skip
         this.restaurants.splice(this.activeIndex, 1);
       } else {
         // Reset position
@@ -234,11 +238,38 @@ export default {
         }
       });
     },
+    addToFavorites(endpoint) {
+  if (!this.isAuthenticated) {
+    console.error("User is not authenticated.");
+    return;
+  }
+
+  console.log("Sending payload:", { endpoint }); // Debug log to verify the payload
+
+  fetch("http://localhost:9000/api/favorites", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${this.$store.state.token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ endpoint }), // Ensure the endpoint is included here
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to add to favorites");
+      }
+      console.log(`Endpoint ${endpoint} added to favorites!`);
+    })
+    .catch((error) => {
+      console.error("Error adding to favorites:", error);
+    });
+}
+
+,
   },
   watch: {
     restaurants(newRestaurants) {
       if (newRestaurants.length) {
-        // Attach listeners when restaurants are updated
         this.$nextTick(() => {
           this.attachCardListeners();
         });
@@ -249,8 +280,8 @@ export default {
     this.attachCardListeners();
   },
 };
-
 </script>
+
 
 
 <style scoped>

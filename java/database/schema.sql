@@ -25,13 +25,14 @@ CREATE TABLE restaurants (
 
 
 CREATE TABLE favorites (
-    favorite_id SERIAL PRIMARY KEY,
+    id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
-    restaurant_id INT NOT NULL,
-    CONSTRAINT FK_favorites_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    CONSTRAINT FK_favorites_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id) ON DELETE CASCADE,
-    UNIQUE (user_id, restaurant_id)
+    endpoint VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, endpoint),
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
+
 
 
 CREATE TABLE skipped (
