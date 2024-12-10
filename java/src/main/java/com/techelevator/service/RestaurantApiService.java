@@ -56,20 +56,50 @@ public class RestaurantApiService {
             return List.of();
         }
     }
-
     private List<Restaurant> mapToRestaurantList(List<GooglePlaceResult> results) {
         List<Restaurant> restaurants = new ArrayList<>();
         for (GooglePlaceResult result : results) {
             Restaurant restaurant = new Restaurant();
+
+            // Basic Info
             restaurant.setName(result.getName());
             restaurant.setAddress(result.getFormattedAddress());
-            restaurant.setRating(result.getRating());
-            restaurant.setImage(result.getPhotos() != null && !result.getPhotos().isEmpty()
-                    ? String.format("https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%s&key=%s",
-                    result.getPhotos().get(0).getPhotoReference(), apiKey)
-                    : null);
+            restaurant.setRating(result.getRating() != null ? result.getRating() : 0.0);
+            restaurant.setWebsite(result.getWebsite());
+            restaurant.setPhone(result.getFormattedPhoneNumber());
+
+            // Is Open Now
+            restaurant.setOpenNow(result.getOpeningHours() != null && result.getOpeningHours().isOpenNow());
+
+            // Parsing Operating Hours
+            if (result.getOpeningHours() != null && result.getOpeningHours().getWeekdayText() != null) {
+                restaurant.setHoursInterval(String.join(", ", result.getOpeningHours().getWeekdayText()));
+            } else {
+                restaurant.setHoursInterval("Hours not available");
+            }
+
+            // Parsing Photos
+            if (result.getPhotos() != null && !result.getPhotos().isEmpty()) {
+                restaurant.setImage(String.format(
+                        "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%s&key=%s",
+                        result.getPhotos().get(0).getPhotoReference(), apiKey));
+            } else {
+                restaurant.setImage("default-image-path.jpg"); // Placeholder for restaurants without photos
+            }
+
+            // Beer/Wine Serving
+            restaurant.setServesBeer(result.getServesBeer() != null && result.getServesBeer());
+            restaurant.setServesWine(result.getServesWine() != null && result.getServesWine());
+
+            // Add restaurant to the list
             restaurants.add(restaurant);
         }
         return restaurants;
     }
+
+
 }
+
+
+
+

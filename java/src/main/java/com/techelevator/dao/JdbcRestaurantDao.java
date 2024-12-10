@@ -22,10 +22,17 @@ public class JdbcRestaurantDao implements RestaurantDao {
             Restaurant restaurant = new Restaurant();
             restaurant.setId(rs.getInt("restaurant_id"));
             restaurant.setName(rs.getString("name"));
+            restaurant.setAddress(rs.getString("address"));
             restaurant.setImage(rs.getString("image"));
             restaurant.setRating(rs.getDouble("rating"));
-            restaurant.setDistance(rs.getDouble("distance"));
-            restaurant.setKidFriendly(rs.getBoolean("kid_friendly"));
+
+            restaurant.setOpenNow(rs.getBoolean("open_now"));
+
+            restaurant.setPhone(rs.getString("phone"));
+            restaurant.setServesBeer(rs.getBoolean("serves_beer"));
+            restaurant.setServesWine(rs.getBoolean("serves_wine"));
+            restaurant.setWebsite(rs.getString("website"));
+
             return restaurant;
         });
     }
@@ -53,10 +60,17 @@ public class JdbcRestaurantDao implements RestaurantDao {
             Restaurant restaurant = new Restaurant();
             restaurant.setId(rs.getInt("restaurant_id"));
             restaurant.setName(rs.getString("name"));
+            restaurant.setAddress(rs.getString("address"));
             restaurant.setImage(rs.getString("image"));
             restaurant.setRating(rs.getDouble("rating"));
-            restaurant.setDistance(rs.getDouble("distance"));
-            restaurant.setKidFriendly(rs.getBoolean("kid_friendly"));
+
+            restaurant.setOpenNow(rs.getBoolean("open_now"));
+
+            restaurant.setPhone(rs.getString("phone"));
+            restaurant.setServesBeer(rs.getBoolean("serves_beer"));
+            restaurant.setServesWine(rs.getBoolean("serves_wine"));
+            restaurant.setWebsite(rs.getString("website"));
+
             return restaurant;
         }, userId);
     }
@@ -72,10 +86,17 @@ public class JdbcRestaurantDao implements RestaurantDao {
             Restaurant restaurant = new Restaurant();
             restaurant.setId(rs.getInt("restaurant_id"));
             restaurant.setName(rs.getString("name"));
+            restaurant.setAddress(rs.getString("address"));
             restaurant.setImage(rs.getString("image"));
             restaurant.setRating(rs.getDouble("rating"));
-            restaurant.setDistance(rs.getDouble("distance"));
-            restaurant.setKidFriendly(rs.getBoolean("kid_friendly"));
+
+            restaurant.setOpenNow(rs.getBoolean("open_now"));
+
+            restaurant.setPhone(rs.getString("phone"));
+            restaurant.setServesBeer(rs.getBoolean("serves_beer"));
+            restaurant.setServesWine(rs.getBoolean("serves_wine"));
+            restaurant.setWebsite(rs.getString("website"));
+
             return restaurant;
         }, userId);
     }

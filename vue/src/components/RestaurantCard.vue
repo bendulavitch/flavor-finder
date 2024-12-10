@@ -1,5 +1,5 @@
 <template>
-  <div class="restaurant-card">
+  <div class="restaurant-card" @click="goToWebsite">
     <img 
       :src="restaurant.image || 'ben.jpg'" 
       alt="Restaurant Image" 
@@ -8,14 +8,32 @@
     <div class="restaurant-details">
       <h2>{{ restaurant.name }}</h2>
       <p class="address">{{ restaurant.address }}</p>
+      
+      <!-- Rating -->
       <div class="rating-section">
         <span v-if="restaurant.rating" class="rating">⭐ {{ restaurant.rating }}</span>
         <span v-else>No Rating Available</span>
       </div>
-      <p v-if="restaurant.cityName && restaurant.stateName">
-        {{ restaurant.cityName }}, {{ restaurant.stateName }}
-      </p>
+
+      <!-- Phone -->
       <p v-if="restaurant.phone">📞 {{ restaurant.phone }}</p>
+
+      <!-- Hours -->
+      <p v-if="restaurant.hoursInterval">🕒 {{ restaurant.hoursInterval }}</p>
+      
+      <!-- Is Open Now -->
+      <p>
+        <span v-if="restaurant.openNow" class="open-now">✅ Open Now</span>
+        <span v-else class="closed">❌ Closed</span>
+      </p>
+
+      <!-- Beer and Wine -->
+      <div class="beverages">
+        <span v-if="restaurant.servesBeer" class="beer-icon">🍺 Serves Beer</span>
+        <span v-if="restaurant.servesWine" class="wine-icon">🍷 Serves Wine</span>
+      </div>
+
+      <!-- Website Link -->
       <a 
         v-if="restaurant.website" 
         :href="restaurant.website" 
@@ -24,8 +42,6 @@
       >
         Visit Website
       </a>
-      <p v-if="restaurant.cuisineType">Cuisine: {{ restaurant.cuisineType }}</p>
-      <p v-if="restaurant.hoursInterval">Hours: {{ restaurant.hoursInterval }}</p>
     </div>
   </div>
 </template>
@@ -36,6 +52,13 @@ export default {
     restaurant: {
       type: Object,
       required: true,
+    },
+  },
+  methods: {
+    goToWebsite() {
+      if (this.restaurant.website) {
+        window.open(this.restaurant.website, "_blank");
+      }
     },
   },
 };
@@ -51,6 +74,11 @@ export default {
   max-width: 400px;
   margin: auto;
   background-color: #fff; /* Optional: Add background for better readability */
+  cursor: pointer;
+}
+.restaurant-card:hover {
+  transform: scale(1.02);
+  transition: transform 0.3s ease;
 }
 .restaurant-image {
   width: 100%;
@@ -81,6 +109,27 @@ export default {
 .address {
   font-size: 0.9rem;
   margin: 0.5rem 0;
+  color: #555;
+}
+.open-now {
+  color: green;
+  font-weight: bold;
+}
+.closed {
+  color: red;
+  font-weight: bold;
+}
+.beverages {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.beer-icon,
+.wine-icon {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9rem;
   color: #555;
 }
 </style>
