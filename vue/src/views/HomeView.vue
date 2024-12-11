@@ -1,5 +1,7 @@
 <template>
   <div class="home-view">
+    <br>
+    <br>
     <h2>Find Restaurants Near You</h2>
     <div class="filters">
       <!-- Location Filters for Zip Code or City/State -->
@@ -374,7 +376,7 @@ export default {
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
   font-weight: bold;
-  background-color: #f49f0a;
+  background-color: #737f9a;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -384,7 +386,7 @@ export default {
 }
 
 .filters button:hover {
-  background-color: #d9890c;
+  background-color: #737f9a;
   transform: scale(1.05);
 }
 
@@ -485,7 +487,7 @@ export default {
 }
 
 .voting-header {
-  background-color: #c88f67;
+  background-color: #e0c9a6;
   color: white;
   padding: 20px;
   position: relative;
@@ -582,7 +584,7 @@ export default {
 }
 
 .vote-btn {
-  background-color: #f49f0a;
+  background-color: #e0c9a6;
   color: #fff;
   border: none;
   border-radius: 5px;
@@ -594,7 +596,7 @@ export default {
 }
 
 .vote-btn:hover {
-  background-color: #d9890c;
+  background-color: #e0c9a6;
 }
 
 .vote-btn:active {
@@ -606,7 +608,7 @@ export default {
   position: fixed;
   bottom: 80px;
   right: 20px;
-  background-color: #c88f67;
+  background-color: #e0c9a6;
   color: white;
   padding: 10px 15px;
   border-radius: 8px;
