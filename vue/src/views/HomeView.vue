@@ -25,7 +25,7 @@
           maxlength="2"
           @input="clearError"
         />
-      </div >
+      </div>
       <button class="filters" @click="toggleLocationType">
         {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
       </button>
@@ -49,7 +49,15 @@
         class="restaurant-card-wrapper"
         :style="getCardStyle(index)"
         ref="cards"
+        :class="{
+          'swipe-right': index === activeIndex && swipeDirection === 'right',
+          'swipe-left': index === activeIndex && swipeDirection === 'left'
+        }"
       >
+        <div class="overlay" v-if="index === activeIndex && (swipeDirection === 'right' || swipeDirection === 'left')">
+          <div v-if="swipeDirection === 'right'" class="check-mark">✔</div>
+          <div v-if="swipeDirection === 'left'" class="x-mark">✘</div>
+        </div>
         <RestaurantCard :restaurant="restaurant" />
       </div>
     </div>
@@ -76,6 +84,10 @@
     </div>
     <!-- Open Messaging Button -->
     <button id="open-messaging-btn" @click="toggleMessaging">Messages</button>
+
+    <!-- Audio elements for swipe sounds -->
+    <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
+    <audio ref="rejectSound" src="/Images/x.mp3" preload="auto"></audio>
   </div>
 </template>
 
@@ -103,7 +115,8 @@ export default {
       state: "",
       isLoading: false,
       hasSearched: false,
-      errorMessage: "", // To display user-friendly errors
+      errorMessage: "",
+      swipeDirection: null // 'right' or 'left'
     };
   },
   computed: {
@@ -113,7 +126,7 @@ export default {
       );
     },
     isAuthenticated() {
-      return this.$store.state.token !== ""; // Check if the user is authenticated
+      return this.$store.state.token !== "";
     },
   },
   methods: {
@@ -198,6 +211,7 @@ export default {
     handleMouseDown(e) {
       this.startX = e.clientX;
       this.isDragging = true;
+      this.swipeDirection = null;
     },
     handleMouseMove(e) {
       if (!this.isDragging) return;
@@ -209,36 +223,89 @@ export default {
       }
     },
     handleMouseUp() {
-  if (!this.isDragging) return;
-  this.isDragging = false;
+      if (!this.isDragging) return;
+      this.isDragging = false;
 
-  const topCard = this.$refs.cards[this.activeIndex]; // Get the current top card
-  if (!topCard) return;
+      const topCard = this.$refs.cards[this.activeIndex]; 
+      if (!topCard) return;
 
-  const favoritedRestaurant = this.restaurants[this.activeIndex]; // Get the restaurant corresponding to the top card
-      console.log(this.activeIndex.placeId);
-  if (this.currentX > 100) {
-    // Swipe right to add to favorites
-    if (favoritedRestaurant && favoritedRestaurant.placeId) {
-      this.addToFavorites(favoritedRestaurant.placeId); // Call addToFavorites with place_id
-    } else {
-      console.error("No place_id found for the selected restaurant.");
-    }
-    this.restaurants.splice(this.activeIndex, 1); // Remove card from stack
-  } else if (this.currentX < -100) {
-    // Swipe left to skip
-    this.restaurants.splice(this.activeIndex, 1); // Remove card from stack
-  } else {
-    // Reset position
-    topCard.style.transition = "transform 0.3s ease";
-    topCard.style.transform = "translateX(0) rotate(0)";
-  }
+      const favoritedRestaurant = this.restaurants[this.activeIndex]; 
+      if (this.currentX > 100) {
+        // Swipe right - favorite
+        this.swipeDirection = 'right';
+        this.$refs.successSound.play();
 
-  this.currentX = 0; // Reset drag distance
-}
+        if (favoritedRestaurant && favoritedRestaurant.placeId) {
+          this.addToFavorites(favoritedRestaurant.placeId);
+        } else {
+          console.error("No place_id found for the selected restaurant.");
+        }
 
+        this.animateCardRemoval(topCard, () => {
+          this.restaurants.splice(this.activeIndex, 1);
+          this.highlightFavoritesLink();
+        });
+      } else if (this.currentX < -100) {
+        // Swipe left - skip
+        this.swipeDirection = 'left';
+        this.$refs.rejectSound.play();
 
-,
+        this.animateCardRemoval(topCard, () => {
+          this.restaurants.splice(this.activeIndex, 1);
+        });
+      } else {
+        // Reset position
+        topCard.style.transition = "transform 0.3s ease";
+        topCard.style.transform = "translateX(0) rotate(0)";
+      }
+
+      this.currentX = 0;
+    },
+    animateCardRemoval(card, callback) {
+      card.style.transition = "transform 0.5s ease, opacity 0.5s ease";
+      card.style.transform += " translateY(-200px)";
+      card.style.opacity = "0";
+      setTimeout(() => {
+        callback();
+        this.swipeDirection = null;
+      }, 500);
+    },
+    addToFavorites(placeId) {
+      if (!this.isAuthenticated) {
+        console.error("User is not authenticated.");
+        return;
+      }
+
+      console.log("Sending payload with place_id:", { place_id: placeId });
+
+      fetch("http://localhost:9000/api/favorites", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.$store.state.token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ place_id: placeId }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to add to favorites");
+          }
+          console.log(`Place ID ${placeId} added to favorites!`);
+        })
+        .catch((error) => {
+          console.error("Error adding to favorites:", error);
+        });
+    },
+    highlightFavoritesLink() {
+      const navLinks = document.querySelectorAll('.nav-links li a');
+      const favoritesLink = Array.from(navLinks).find(link => link.textContent.trim() === 'Favorites');
+      if (favoritesLink) {
+        favoritesLink.classList.add('highlight');
+        setTimeout(() => {
+          favoritesLink.classList.remove('highlight');
+        }, 1500);
+      }
+    },
     attachCardListeners() {
       const cards = this.$refs.cards || [];
       cards.forEach((card) => {
@@ -249,35 +316,6 @@ export default {
         }
       });
     },
-    addToFavorites(placeId) {
-  if (!this.isAuthenticated) {
-    console.error("User is not authenticated.");
-    return;
-  }
-
-  console.log("Sending payload with place_id:", { place_id: placeId });
-
-  fetch("http://localhost:9000/api/favorites", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${this.$store.state.token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ place_id: placeId }), // Send place_id
-  })
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error("Failed to add to favorites");
-      }
-      console.log(`Place ID ${placeId} added to favorites!`);
-    })
-    .catch((error) => {
-      console.error("Error adding to favorites:", error);
-    });
-}
-
-
-,
   },
   watch: {
     restaurants(newRestaurants) {
@@ -292,12 +330,7 @@ export default {
     this.attachCardListeners();
   },
 };
-
-
-
 </script>
-
-
 
 <style scoped>
 .home-view {
@@ -309,14 +342,14 @@ export default {
 /* Filters Section */
 .filters {
   display: flex;
-  flex-direction: column; /* Adjusted for vertical layout with location input */
+  flex-direction: column;
   gap: 1rem;
   margin-bottom: 1rem;
 }
 
 .filters .location-inputs {
   display: flex;
-  flex-wrap: wrap; /* Wrap inputs on smaller screens */
+  flex-wrap: wrap;
   gap: 1rem;
 }
 
@@ -324,7 +357,7 @@ export default {
   padding: 0.6rem 1.2rem;
   font-size: 1rem;
   font-weight: bold;
-  background-color: #f49f0a; /* Attractive orange */
+  background-color: #f49f0a;
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -334,7 +367,7 @@ export default {
 }
 
 .filters button:hover {
-  background-color: #d9890c; /* Darker orange */
+  background-color: #d9890c;
   transform: scale(1.05);
 }
 
@@ -343,8 +376,9 @@ export default {
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
-  width: calc(100% - 2rem); /* Ensure proper width with padding */
+  width: calc(100% - 2rem);
 }
+
 /* Loading Indicator */
 .filters .loading-indicator {
   text-align: center;
@@ -375,35 +409,64 @@ export default {
   transition: transform 0.3s ease, opacity 0.3s ease;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-}
-
-.restaurant-card-wrapper:not(:nth-child(1)) {
-  visibility: hidden; /* Hide cards beneath to prevent overlapping content */
+  cursor: grab;
 }
 
 .restaurant-card-wrapper.active {
   visibility: visible;
 }
 
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 4rem;
+  color: white;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.check-mark {
+  color: green;
+  font-size: 4rem;
+}
+
+.x-mark {
+  color: red;
+  font-size: 4rem;
+}
+
+/* Highlight for Favorites link */
+.nav-links li a.highlight {
+  background-color: #c8e6c9 !important;
+  color: #2e7d32 !important;
+  box-shadow: 0 0 10px 2px #c8e6c9;
+}
+
 /* Slide-Out Messaging Panel */
 #messaging-panel {
   position: fixed;
   top: 0;
-  right: -300px; /* Initially hidden */
+  right: -300px;
   width: 300px;
   height: 100%;
-  background-color: #fff7ed; /* Light cream */
+  background-color: #fff7ed;
   box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  transition: right 0.3s ease-in-out; /* Slide-in animation */
+  transition: right 0.3s ease-in-out;
   z-index: 1001;
 }
 
 #messaging-panel.visible {
-  right: 0; /* Slide into view */
+  right: 0;
 }
 
 .messaging-header {
-  background-color: #c88f67; /* Muted orange */
+  background-color: #c88f67;
   color: white;
   padding: 10px;
   display: flex;
@@ -425,14 +488,14 @@ export default {
 .message-list li {
   padding: 10px;
   margin-bottom: 10px;
-  background-color: #f9f1e7; /* Soft beige */
+  background-color: #f9f1e7;
   border-radius: 5px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
 
 .message-list li:hover {
-  background-color: #e0c9a6; /* Hover effect */
+  background-color: #e0c9a6;
 }
 
 .new-chat-btn {
@@ -440,7 +503,7 @@ export default {
   width: 100%;
   padding: 10px;
   margin-top: 10px;
-  background-color: #c88f67; /* Muted orange */
+  background-color: #c88f67;
   color: white;
   border: none;
   border-radius: 5px;
@@ -449,7 +512,7 @@ export default {
 }
 
 .new-chat-btn:hover {
-  background-color: #a56d4e; /* Darker orange */
+  background-color: #a56d4e;
 }
 
 /* Open Messaging Button */
@@ -457,7 +520,7 @@ export default {
   position: fixed;
   bottom: 20px;
   right: 20px;
-  background-color: #c88f67; /* Muted orange */
+  background-color: #c88f67;
   color: white;
   padding: 10px 15px;
   border-radius: 50%;
@@ -469,6 +532,6 @@ export default {
 
 #open-messaging-btn:hover {
   transform: scale(1.1);
-  background-color: #a56d4e; /* Darker orange */
+  background-color: #a56d4e;
 }
 </style>

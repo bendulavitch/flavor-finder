@@ -1,6 +1,10 @@
 package com.techelevator.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class GooglePlacePhoto {
+
+    @JsonProperty("photo_reference")
     private String photo_reference;
 
     public String getPhotoReference() {

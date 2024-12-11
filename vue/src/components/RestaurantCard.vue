@@ -1,7 +1,7 @@
 <template>
   <div class="restaurant-card" @click="goToWebsite">
     <img 
-      :src="restaurant.photo || 'ben.jpg'" 
+      :src="restaurant.image || 'ben.jpg'" 
       alt="Restaurant Image" 
       class="restaurant-image" 
     />
@@ -9,9 +9,7 @@
       <h2>{{ restaurant.name }}</h2>
       <p class="address">{{ restaurant.address }}</p>
       
- <!-- Render place_id for debugging or use -->
-        <p v-if="restaurant.placeId">Place ID: {{ restaurant.placeId }}</p>
-        
+ 
 
       <!-- Rating -->
       <div class="rating-section">

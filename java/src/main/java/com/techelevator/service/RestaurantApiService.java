@@ -106,13 +106,14 @@ public class RestaurantApiService {
             restaurant.setHoursInterval("Hours not available");
         }
 
-        if (result.getPhotos() != null && !result.getPhotos().isEmpty()) {
+        if (result.getPhotos() != null && !result.getPhotos().isEmpty() && result.getPhotos().get(0).getPhotoReference() != null) {
             restaurant.setImage(String.format(
                     "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%s&key=%s",
                     result.getPhotos().get(0).getPhotoReference(), apiKey));
         } else {
             restaurant.setImage("default-image-path.jpg");
         }
+
 
         restaurant.setServesBeer(Boolean.TRUE.equals(result.getServesBeer()));
         restaurant.setServesWine(Boolean.TRUE.equals(result.getServesWine()));
