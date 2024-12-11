@@ -67,6 +67,7 @@ public class RestaurantApiService {
             restaurant.setRating(result.getRating() != null ? result.getRating() : 0.0);
             restaurant.setWebsite(result.getWebsite());
             restaurant.setPhone(result.getFormattedPhoneNumber());
+            restaurant.setPlaceId(result.getPlaceId());
 
             // Is Open Now
             restaurant.setOpenNow(result.getOpeningHours() != null && result.getOpeningHours().isOpenNow());

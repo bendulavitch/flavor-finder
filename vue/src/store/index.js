@@ -6,30 +6,7 @@ export function createStore(currentToken, currentUser) {
     state: {
       token: currentToken || '',
       user: currentUser || {},
-      restaurants: [ {
-        id: 1,
-        name: "Joe's Diner",
-        image: "https://via.placeholder.com/150",
-        rating: 4.5,
-        distance: 2.3,
-        kidFriendly: true,
-      },
-      {
-        id: 2,
-        name: "Pasta Palace",
-        image: "https://via.placeholder.com/150",
-        rating: 4.0,
-        distance: 5.1,
-        kidFriendly: false,
-      },
-      {
-        id: 3,
-        name: "Burger Barn",
-        image: "https://via.placeholder.com/150",
-        rating: 4.8,
-        distance: 1.2,
-        kidFriendly: true,
-      },], // Initialize restaurants as an empty array
+      restaurants: [], // Initialize restaurants as an empty array
     },
     mutations: {
       SET_AUTH_TOKEN(state, token) {
@@ -58,6 +35,7 @@ export function createStore(currentToken, currentUser) {
         axios
           .get('/api/restaurants')
           .then((response) => {
+            console.log(response.date);
             commit('SET_RESTAURANTS', response.data);
           })
           .catch((error) => {

@@ -15,6 +15,15 @@ package com.techelevator.model;
             private String hoursInterval;
             private boolean servesBeer;
             private boolean servesWine;
+            private String placeId;
+
+            public String getPlaceId() {
+                return placeId;
+            }
+
+            public void setPlaceId(String placeId) {
+                this.placeId = placeId;
+            }
 
             public int getId() {
                 return id;

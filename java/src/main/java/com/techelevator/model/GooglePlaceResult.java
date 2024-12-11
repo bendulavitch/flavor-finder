@@ -38,6 +38,17 @@ public class GooglePlaceResult {
     @JsonProperty("serves_wine")
     private Boolean servesWine;
 
+    public String getPlaceId() {
+        return placeId;
+    }
+
+    public void setPlaceId(String placeId) {
+        this.placeId = placeId;
+    }
+
+    @JsonProperty("place_id")
+    private String placeId;
+
     private String website;
 
     // Getters and Setters

@@ -152,6 +152,7 @@ export default {
         `http://localhost:9000/api/restaurants/fetch?queryType=${queryType}&queryValue=${queryValue}`
       )
         .then((response) => {
+          console.log(response);
           if (!response.ok) {
             throw new Error("Failed to fetch restaurants");
           }
@@ -216,8 +217,10 @@ export default {
       if (this.currentX > 100) {
         // Swipe right to add to favorites
         const favoritedRestaurant = this.restaurants[this.activeIndex];
+        console.log(JSON.stringify(favoritedRestaurant));
         this.addToFavorites(favoritedRestaurant.endpoint); // Pass the endpoint
         this.restaurants.splice(this.activeIndex, 1);
+        
       } else if (this.currentX < -100) {
         // Swipe left to skip
         this.restaurants.splice(this.activeIndex, 1);
@@ -245,7 +248,7 @@ export default {
   }
 
   console.log("Sending payload:", { endpoint }); // Debug log to verify the payload
-
+  
   fetch("http://localhost:9000/api/favorites", {
     method: "POST",
     headers: {
@@ -256,6 +259,7 @@ export default {
   })
     .then((response) => {
       if (!response.ok) {
+        console.log(response.content);
         throw new Error("Failed to add to favorites");
       }
       console.log(`Endpoint ${endpoint} added to favorites!`);
@@ -280,6 +284,9 @@ export default {
     this.attachCardListeners();
   },
 };
+
+
+
 </script>
 
 

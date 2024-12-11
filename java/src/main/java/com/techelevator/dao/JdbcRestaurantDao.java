@@ -26,6 +26,7 @@ public class JdbcRestaurantDao implements RestaurantDao {
             restaurant.setImage(rs.getString("image"));
             restaurant.setRating(rs.getDouble("rating"));
 
+
             restaurant.setOpenNow(rs.getBoolean("open_now"));
 
             restaurant.setPhone(rs.getString("phone"));
