@@ -1,13 +1,12 @@
 package com.techelevator.service;
 
+import com.techelevator.model.GooglePlaceDetailsResponse;
 import com.techelevator.model.GooglePlaceResult;
 import com.techelevator.model.GooglePlacesResponse;
 import com.techelevator.model.Restaurant;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 
@@ -29,10 +28,11 @@ public class RestaurantApiService {
         this.restTemplate = restTemplate;
     }
 
+    // Use this for text search (multiple results)
     public List<Restaurant> fetchRestaurantsFromApi(String queryType, String queryValue) {
-        String query = queryType.equalsIgnoreCase("zipcode") ?
-                "restaurants+in+" + queryValue :
-                "restaurants+in+" + queryValue.replace(" ", "+");
+        String query = queryType.equalsIgnoreCase("zipcode")
+                ? "restaurants+in+" + queryValue
+                : "restaurants+in+" + queryValue.replace(" ", "+");
 
         String url = String.format("%s?query=%s&key=%s", baseUrl, query, apiKey);
 
@@ -56,51 +56,67 @@ public class RestaurantApiService {
             return List.of();
         }
     }
+
+    // Use this for a single place details fetch
+    public Restaurant fetchRestaurantDetailsByPlaceId(String placeId) {
+        String url = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" + placeId + "&key=" + apiKey;
+
+        try {
+            ResponseEntity<GooglePlaceDetailsResponse> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    GooglePlaceDetailsResponse.class
+            );
+
+            if (response.getBody() == null || response.getBody().getResult() == null) {
+                System.err.println("No details found for place_id: " + placeId);
+                return null;
+            }
+
+            GooglePlaceResult result = response.getBody().getResult();
+            return mapToRestaurant(result);
+        } catch (Exception e) {
+            System.err.println("Error fetching details from Google Places Details API: " + e.getMessage());
+            return null;
+        }
+    }
+
     private List<Restaurant> mapToRestaurantList(List<GooglePlaceResult> results) {
         List<Restaurant> restaurants = new ArrayList<>();
         for (GooglePlaceResult result : results) {
-            Restaurant restaurant = new Restaurant();
-
-            // Basic Info
-            restaurant.setName(result.getName());
-            restaurant.setAddress(result.getFormattedAddress());
-            restaurant.setRating(result.getRating() != null ? result.getRating() : 0.0);
-            restaurant.setWebsite(result.getWebsite());
-            restaurant.setPhone(result.getFormattedPhoneNumber());
-            restaurant.setPlaceId(result.getPlaceId());
-
-            // Is Open Now
-            restaurant.setOpenNow(result.getOpeningHours() != null && result.getOpeningHours().isOpenNow());
-
-            // Parsing Operating Hours
-            if (result.getOpeningHours() != null && result.getOpeningHours().getWeekdayText() != null) {
-                restaurant.setHoursInterval(String.join(", ", result.getOpeningHours().getWeekdayText()));
-            } else {
-                restaurant.setHoursInterval("Hours not available");
-            }
-
-            // Parsing Photos
-            if (result.getPhotos() != null && !result.getPhotos().isEmpty()) {
-                restaurant.setImage(String.format(
-                        "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%s&key=%s",
-                        result.getPhotos().get(0).getPhotoReference(), apiKey));
-            } else {
-                restaurant.setImage("default-image-path.jpg"); // Placeholder for restaurants without photos
-            }
-
-            // Beer/Wine Serving
-            restaurant.setServesBeer(result.getServesBeer() != null && result.getServesBeer());
-            restaurant.setServesWine(result.getServesWine() != null && result.getServesWine());
-
-            // Add restaurant to the list
-            restaurants.add(restaurant);
+            restaurants.add(mapToRestaurant(result));
         }
         return restaurants;
     }
 
+    private Restaurant mapToRestaurant(GooglePlaceResult result) {
+        Restaurant restaurant = new Restaurant();
+        restaurant.setName(result.getName());
+        restaurant.setAddress(result.getFormattedAddress());
+        restaurant.setRating(result.getRating() != null ? result.getRating() : 0.0);
+        restaurant.setWebsite(result.getWebsite());
+        restaurant.setPhone(result.getFormattedPhoneNumber());
+        restaurant.setPlaceId(result.getPlaceId());
+        restaurant.setOpenNow(result.getOpeningHours() != null && result.getOpeningHours().isOpenNow());
 
+        if (result.getOpeningHours() != null && result.getOpeningHours().getWeekdayText() != null) {
+            restaurant.setHoursInterval(String.join(", ", result.getOpeningHours().getWeekdayText()));
+        } else {
+            restaurant.setHoursInterval("Hours not available");
+        }
+
+        if (result.getPhotos() != null && !result.getPhotos().isEmpty()) {
+            restaurant.setImage(String.format(
+                    "https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=%s&key=%s",
+                    result.getPhotos().get(0).getPhotoReference(), apiKey));
+        } else {
+            restaurant.setImage("default-image-path.jpg");
+        }
+
+        restaurant.setServesBeer(Boolean.TRUE.equals(result.getServesBeer()));
+        restaurant.setServesWine(Boolean.TRUE.equals(result.getServesWine()));
+
+        return restaurant;
+    }
 }
-
-
-
-

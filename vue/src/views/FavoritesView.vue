@@ -36,88 +36,38 @@ export default {
   },
   methods: {
     fetchFavorites() {
-      this.isLoading = true;
-      this.errorMessage = "";
+  this.isLoading = true;
+  this.errorMessage = "";
 
-      fetch("http://localhost:9000/api/favorites", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${this.$store.state.token}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch favorites");
-          }
-          return response.json();
-        })
-        .then((endpoints) => {
-          if (!endpoints.length) {
-            throw new Error("No endpoints returned from backend");
-          }
-
-          const fetchDetails = endpoints.map((endpoint) =>
-            fetch(endpoint)
-              .then((res) => {
-                if (!res.ok) {
-                  throw new Error(`Failed to fetch details for ${endpoint}`);
-                }
-                return res.json();
-              })
-              .then((data) => {
-                // Ensure we have a valid structure
-                if (!data || !data.result) {
-                  throw new Error(`Invalid response from API for ${endpoint}`);
-                }
-
-                const result = data.result;
-
-                // Transform the Google Places data into the shape needed by RestaurantCard
-                const imageUrl =
-                  result.photos && result.photos.length > 0
-                    ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${result.photos[0].photo_reference}&key=AIzaSyDW3C7apil1_X7QUme8pTwdTgX8lMiuMys`
-                    : null;
-
-                return {
-                  name: result.name || "Unknown Name",
-                  address: result.formatted_address || "No Address Available",
-                  rating: result.rating || "N/A",
-                  image: imageUrl,
-                  placeId: result.place_id || null,
-                  website: result.website || null,
-                  phone: result.formatted_phone_number || null,
-                  openNow: result.opening_hours ? result.opening_hours.open_now : false,
-                  servesBeer: !!result.serves_beer,
-                  servesWine: !!result.serves_wine,
-                  // Join weekday_text for a simple hours interval display (optional)
-                  hoursInterval: result.opening_hours && result.opening_hours.weekday_text
-                    ? result.opening_hours.weekday_text.join(", ")
-                    : null,
-                };
-              })
-              .catch((error) => {
-                console.error(`Error fetching details for ${endpoint}:`, error);
-                return null; // Skip invalid or failed responses
-              })
-          );
-
-          return Promise.all(fetchDetails);
-        })
-        .then((restaurants) => {
-          this.favorites = restaurants.filter((restaurant) => restaurant !== null);
-
-          if (!this.favorites.length) {
-            this.errorMessage = "No valid favorites found.";
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching favorites:", error);
-          this.errorMessage = "Failed to load favorites.";
-        })
-        .finally(() => {
-          this.isLoading = false;
-        });
+  fetch("http://localhost:9000/api/favorites", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${this.$store.state.token}`,
     },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error("Failed to fetch favorites");
+      }
+      return response.json();
+    })
+    .then((restaurants) => {
+      // Now `restaurants` is already a list of Restaurant objects
+      if (!restaurants.length) {
+        this.errorMessage = "No valid favorites found.";
+      } else {
+        this.favorites = restaurants;
+      }
+    })
+    .catch((error) => {
+      console.error("Error fetching favorites:", error);
+      this.errorMessage = "Failed to load favorites.";
+    })
+    .finally(() => {
+      this.isLoading = false;
+    });
+}
+,
   },
   mounted() {
     this.fetchFavorites();
