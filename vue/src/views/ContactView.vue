@@ -1,4 +1,5 @@
 <template>
+  <body>
     <br>
     <br>
     <div class="container">
@@ -46,6 +47,10 @@
         </div>
       </form>
     </div>
+    <br>
+    
+    
+    </body>
   </template>
   
   <style scoped>

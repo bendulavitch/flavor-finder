@@ -185,11 +185,11 @@ export default {
   font-weight: 600;
   margin-bottom: 15px;
   color: #fff;
-  text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.8);
+  
 }
 
 #hero h1 .highlight {
-  color: #ca6b28; /* Gold color to emphasize 'Flavor Finder' */
+  color: #5c5c5c; /* Gold color to emphasize 'Flavor Finder' */
 }
 
 .hero-subheading {
@@ -207,8 +207,8 @@ export default {
 
 .btn-primary {
   padding: 12px 24px;
-  background-color: #ca6b28; /* Gold button color to match theme */
-  color: #000; /* Black text for contrast */
+  background-color: #5c5c5c; /* Gold button color to match theme */
+  color: #fff; /* Black text for contrast */
   font-weight: bold;
   text-decoration: none;
   border-radius: 25px; /* Make it more button-like */
@@ -217,7 +217,7 @@ export default {
 }
 
 .btn-primary:hover {
-  background-color: #db9773; /* Slightly lighter gold on hover */
+  background-color: #636772; /* Slightly lighter gold on hover */
   transform: translateY(-2px); /* Subtle hover effect */
 }
 

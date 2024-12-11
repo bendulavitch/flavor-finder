@@ -1,4 +1,5 @@
 <template>
+  <body>
     <div class="about-container">
       <div class="content">
         <h1>About Flavor Finder</h1>
@@ -18,6 +19,8 @@
         </p>
       </div>
     </div>
+    <br>
+    </body>
   </template>
   
   <style scoped>

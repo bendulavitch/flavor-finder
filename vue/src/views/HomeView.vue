@@ -1,159 +1,169 @@
 <template>
-  <div class="home-view">
-    <h2>Find Restaurants Near You</h2>
+  <body>
+    <div class="home-view">
+      <h2>Find Restaurants Near You</h2>
 
-    <!-- Location Filters -->
-    <div class="filter-card">
-      <h3 class="filter-title">Search by Location</h3>
-      <p class="filter-subtitle">
-        Quickly find restaurants by providing a Zip Code or City and State.
-      </p>
-      <div class="location-filters">
-        <div class="location-inputs">
-          <div class="input-group" v-if="useZipCode">
-            <label for="zip-code">Zip Code</label>
-            <input
-              id="zip-code"
-              type="text"
-              v-model="zipCode"
-              placeholder="e.g. 90210"
-              @input="clearError"
-            />
-          </div>
-
-          <div class="city-state-inputs" v-else>
-            <div class="input-group">
-              <label for="city">City</label>
+      <!-- Location Filters -->
+      <div class="filter-card">
+        <h3 class="filter-title">Search by Location</h3>
+        <p class="filter-subtitle">
+          Quickly find restaurants by providing a Zip Code or City and State.
+        </p>
+        <div class="location-filters">
+          <div class="location-inputs">
+            <div class="input-group" v-if="useZipCode">
+              <label for="zip-code">Zip Code</label>
               <input
-                id="city"
+                id="zip-code"
                 type="text"
-                v-model="city"
-                placeholder="e.g. Los Angeles"
+                v-model="zipCode"
+                placeholder="e.g. 90210"
                 @input="clearError"
               />
             </div>
-            <div class="input-group">
-              <label for="state">State</label>
-              <input
-                id="state"
-                type="text"
-                v-model="state"
-                placeholder="CA"
-                maxlength="2"
-                @input="clearError"
-              />
+
+            <div class="city-state-inputs" v-else>
+              <div class="input-group">
+                <label for="city">City</label>
+                <input
+                  id="city"
+                  type="text"
+                  v-model="city"
+                  placeholder="e.g. Los Angeles"
+                  @input="clearError"
+                />
+              </div>
+              <div class="input-group">
+                <label for="state">State</label>
+                <input
+                  id="state"
+                  type="text"
+                  v-model="state"
+                  placeholder="CA"
+                  maxlength="2"
+                  @input="clearError"
+                />
+              </div>
             </div>
+          </div>
+
+          <div class="location-buttons">
+            <button class="btn-switch" @click="toggleLocationType">
+              {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
+            </button>
+            <button class="btn-search" @click="fetchRestaurants">Search</button>
+            <button class="btn-more-filters" @click="toggleFiltersPanel">
+              More Filters
+            </button>
           </div>
         </div>
 
-        <div class="location-buttons">
-          <button class="btn-switch" @click="toggleLocationType">
-            {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
-          </button>
-          <button class="btn-search" @click="fetchRestaurants">Search</button>
-        </div>
+        <!-- Dynamic Filters Panel -->
+        <transition name="slide-fade">
+          <div v-if="filtersPanelOpen" class="dynamic-filters-panel">
+            <h4 class="panel-title">Refine Your Search</h4>
+            <p class="panel-subtitle">
+              Narrow down results and find exactly what you’re craving.
+            </p>
+
+            <div class="secondary-filters">
+              <input 
+                type="text" 
+                v-model="searchQuery" 
+                placeholder="Search by name..."
+                class="search-box"
+              />
+
+              <div class="checkbox-filters">
+                <label>
+                  <input type="checkbox" v-model="filterOpenNow" /> Open Now
+                </label>
+                <label>
+                  <input type="checkbox" v-model="filterHighRating" /> 4★ & Up
+                </label>
+                <label>
+                  <input type="checkbox" v-model="filterKidFriendly" /> Kid Friendly
+                </label>
+              </div>
+
+              <button 
+                class="btn-surprise" 
+                @click="surpriseMe" 
+                :disabled="!restaurants.length"
+              >
+                Surprise Me!
+              </button>
+            </div>
+          </div>
+        </transition>
       </div>
-    </div>
 
-    <!-- Error Message -->
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <!-- Error Message -->
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-    <!-- Secondary Filters -->
-    <div class="filter-card secondary-filters-card">
-      <h3 class="filter-title">Refine Your Search</h3>
-      <p class="filter-subtitle">
-        Narrow down results and find exactly what you’re craving.
-      </p>
-      <div class="secondary-filters">
-        <input 
-          type="text" 
-          v-model="searchQuery" 
-          placeholder="Search by name..."
-          class="search-box"
-        />
-
-        <div class="checkbox-filters">
-          <label>
-            <input type="checkbox" v-model="filterOpenNow" /> Open Now
-          </label>
-          <label>
-            <input type="checkbox" v-model="filterHighRating" /> 4★ & Up
-          </label>
-          <label>
-            <input type="checkbox" v-model="filterKidFriendly" /> Kid Friendly
-          </label>
-        </div>
-
-        <button 
-          class="btn-surprise" 
-          @click="surpriseMe" 
-          :disabled="!restaurants.length"
+      <!-- Restaurant Card Stack -->
+      <div v-if="filteredRestaurants.length" class="stack-interface">
+        <div
+          v-for="(restaurant, index) in filteredRestaurants"
+          :key="restaurant.id || index"
+          class="restaurant-card-wrapper"
+          :style="getCardStyle(index)"
+          ref="cards"
+          :class="{
+            'swipe-right': index === activeIndex && swipeDirection === 'right',
+            'swipe-left': index === activeIndex && swipeDirection === 'left'
+          }"
         >
-          Surprise Me!
-        </button>
-      </div>
-    </div>
-
-    <!-- Restaurant Card Stack -->
-    <div v-if="filteredRestaurants.length" class="stack-interface">
-      <div
-        v-for="(restaurant, index) in filteredRestaurants"
-        :key="restaurant.id || index"
-        class="restaurant-card-wrapper"
-        :style="getCardStyle(index)"
-        ref="cards"
-        :class="{
-          'swipe-right': index === activeIndex && swipeDirection === 'right',
-          'swipe-left': index === activeIndex && swipeDirection === 'left'
-        }"
-      >
-        <div class="overlay" v-if="index === activeIndex && (swipeDirection === 'right' || swipeDirection === 'left')">
-          <div v-if="swipeDirection === 'right'" class="check-mark">✔</div>
-          <div v-if="swipeDirection === 'left'" class="x-mark">✘</div>
+          <div class="overlay" v-if="index === activeIndex && (swipeDirection === 'right' || swipeDirection === 'left')">
+            <div v-if="swipeDirection === 'right'" class="check-mark">✔</div>
+            <div v-if="swipeDirection === 'left'" class="x-mark">✘</div>
+          </div>
+          <RestaurantCard :restaurant="restaurant" />
         </div>
-        <RestaurantCard :restaurant="restaurant" />
       </div>
-    </div>
 
-    <div v-else-if="!isLoading && hasSearched" class="no-results">
-      No restaurants found. Try another search or adjust your filters.
-    </div>
-    <div v-if="isLoading" class="loading">Loading restaurants...</div>
-
-    <!-- Voting Trigger Button -->
-    <button id="open-voting-btn" @click="toggleVotingPanel">
-      <span class="icon">🗳️</span> Vote
-    </button>
-
-    <!-- Slide-Out Voting Panel -->
-    <div id="voting-panel" :class="{ visible: isVotingOpen }">
-      <header class="voting-header">
-        <h3>Local Picks</h3>
-        <p class="subtitle">Vote for your favorite spot below</p>
-        <button @click="toggleVotingPanel" class="close-btn">×</button>
-      </header>
-      <div class="voting-content">
-        <ul class="voting-list">
-          <li v-for="(option, index) in votingOptions" :key="index" :class="{voted: justVotedIndex === index}">
-            <div class="voting-item">
-              <div class="info">
-                <span class="restaurant-icon">🍽️</span>
-                <span class="restaurant-name">{{ option.name }}</span>
-              </div>
-              <div class="actions">
-                <span class="votes">Votes: <strong>{{ option.votes }}</strong></span>
-                <button @click="voteForOption(index)" class="vote-btn">Vote</button>
-              </div>
-            </div>
-          </li>
-        </ul>
+      <div v-else-if="!isLoading && hasSearched" class="no-results">
+        No restaurants found. Try another search or adjust your filters.
       </div>
-    </div>
+      <div v-if="isLoading" class="loading">Loading restaurants...</div>
 
-    <!-- Audio elements for swipe sounds -->
-    <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
-    <audio ref="rejectSound" src="/Images/x.mp3" preload="auto"></audio>
-  </div>
+      <!-- Voting Trigger Button -->
+      <button id="open-voting-btn" @click="toggleVotingPanel">
+        <span class="icon">🗳️</span> Vote
+      </button>
+
+      <!-- Slide-Out Voting Panel -->
+      <div id="voting-panel" :class="{ visible: isVotingOpen }">
+        <header class="voting-header">
+          <h3>Local Picks</h3>
+          <p class="subtitle">Vote for your favorite spot below</p>
+          <button @click="toggleVotingPanel" class="close-btn">×</button>
+        </header>
+        <div class="voting-content">
+          <ul class="voting-list">
+            <li v-for="(option, index) in votingOptions" :key="index" :class="{voted: justVotedIndex === index}">
+              <div class="voting-item">
+                <div class="info">
+                  <span class="restaurant-icon">🍽️</span>
+                  <span class="restaurant-name">{{ option.name }}</span>
+                </div>
+                <div class="actions">
+                  <span class="votes">Votes: <strong>{{ option.votes }}</strong></span>
+                  <button @click="voteForOption(index)" class="vote-btn">Vote</button>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Audio elements for swipe sounds -->
+      <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
+      <audio ref="rejectSound" src="/Images/x.mp3" preload="auto"></audio>
+    </div>
+    <br>
+  </body>
+  
 </template>
 
 <script>
@@ -165,6 +175,7 @@ export default {
     return {
       searchQuery: "",
       isVotingOpen: false,
+      filtersPanelOpen: false,
       votingOptions: [
         { name: "Pizza Palace", votes: 0 },
         { name: "Sushi Spot", votes: 0 },
@@ -212,6 +223,9 @@ export default {
     },
     clearError() {
       this.errorMessage = "";
+    },
+    toggleFiltersPanel() {
+      this.filtersPanelOpen = !this.filtersPanelOpen;
     },
     fetchRestaurants() {
       this.errorMessage = "";
@@ -410,6 +424,10 @@ export default {
 </script>
 
 <style scoped>
+
+body {
+  background-color: #fff7ed;
+}
 .home-view {
   padding: 1rem;
   max-width: 900px;
@@ -496,7 +514,7 @@ h2 {
   gap: 0.5rem;
 }
 
-.btn-switch, .btn-search {
+.btn-switch, .btn-search, .btn-more-filters {
   background: #e0c9a6;
   color: #fff;
   padding: 0.6rem 1rem;
@@ -508,23 +526,35 @@ h2 {
   white-space: nowrap;
   transition: background 0.3s ease;
 }
-.btn-switch:hover, .btn-search:hover {
+.btn-switch:hover, .btn-search:hover, .btn-more-filters:hover {
   background: #e7b76b;
 }
 
-/* Error Message */
-.error-message {
-  color: red;
+/* Dynamic Filters Panel */
+.dynamic-filters-panel {
+  margin-top: 1rem;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+.panel-title {
+  font-family: "Playfair Display", serif;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.panel-subtitle {
+  font-size: 0.85rem;
+  color: #555;
   text-align: center;
   margin-bottom: 1rem;
-  font-weight: bold;
 }
 
-/* Secondary Filters */
-.secondary-filters-card {
-  /* Additional styling to differentiate from location filters if desired */
-}
-
+/* Secondary Filters Inside Panel */
 .secondary-filters {
   display: flex;
   align-items: center;
@@ -575,6 +605,14 @@ h2 {
 .btn-surprise:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+/* Error Message */
+.error-message {
+  color: red;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: bold;
 }
 
 /* No Results */
@@ -784,7 +822,7 @@ h2 {
 /* Voting Trigger Button */
 #open-voting-btn {
   position: fixed;
-  bottom: 80px;
+  bottom: 40px;
   right: 20px;
   background-color: #e0c9a6;
   color: white;
@@ -807,4 +845,14 @@ h2 {
 #open-voting-btn .icon {
   font-size: 1.2rem;
 }
+
+/* Transitions */
+.slide-fade-enter-active, .slide-fade-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-fade-enter, .slide-fade-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
 </style>

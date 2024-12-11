@@ -76,6 +76,11 @@ export default {
 </script>
 
 <style scoped>
+
+body {
+  background-color: #e0c9a6;
+}
+
 .favorites-view {
   padding: 1rem;
 }

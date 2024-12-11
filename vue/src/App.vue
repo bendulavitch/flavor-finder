@@ -21,8 +21,13 @@
     <li v-else>
       <router-link v-bind:to="{ name: 'login' }">Login</router-link>
     </li>
-    <li>
+
+
+    <li v-if="isAuthenticated">
       <button @click="logout" class="nav-link btn-logout">Log Out</button>
+    </li>
+    <li v-else>
+      <router-link v-bind:to="{ name: 'register' }">Register</router-link>
     </li>
   </ul>
   
@@ -107,7 +112,7 @@ body {
 /* Nav Bar Styles */
 nav {
   display: flex;
-  justify-content: space-between; /* Space between logo and links */
+  justify-content: space-between; 
   align-items: center;
   background-color: #fff7ed; /* Creamy light background */
   padding: 0 20px; /* Padding on left and right */
