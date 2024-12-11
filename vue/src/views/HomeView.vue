@@ -1,53 +1,104 @@
 <template>
   <div class="home-view">
-    <br>
-    <br>
     <h2>Find Restaurants Near You</h2>
-    <div class="filters">
-      <!-- Location Filters for Zip Code or City/State -->
-      <div v-if="useZipCode">
-        <input
-          type="text"
-          v-model="zipCode"
-          placeholder="Enter Zip Code"
-          @input="clearError"
-        />
+
+    <!-- Location Filters -->
+    <div class="filter-card">
+      <h3 class="filter-title">Search by Location</h3>
+      <p class="filter-subtitle">
+        Quickly find restaurants by providing a Zip Code or City and State.
+      </p>
+      <div class="location-filters">
+        <div class="location-inputs">
+          <div class="input-group" v-if="useZipCode">
+            <label for="zip-code">Zip Code</label>
+            <input
+              id="zip-code"
+              type="text"
+              v-model="zipCode"
+              placeholder="e.g. 90210"
+              @input="clearError"
+            />
+          </div>
+
+          <div class="city-state-inputs" v-else>
+            <div class="input-group">
+              <label for="city">City</label>
+              <input
+                id="city"
+                type="text"
+                v-model="city"
+                placeholder="e.g. Los Angeles"
+                @input="clearError"
+              />
+            </div>
+            <div class="input-group">
+              <label for="state">State</label>
+              <input
+                id="state"
+                type="text"
+                v-model="state"
+                placeholder="CA"
+                maxlength="2"
+                @input="clearError"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div class="location-buttons">
+          <button class="btn-switch" @click="toggleLocationType">
+            {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
+          </button>
+          <button class="btn-search" @click="fetchRestaurants">Search</button>
+        </div>
       </div>
-      <div v-else>
-        <input
-          type="text"
-          v-model="city"
-          placeholder="Enter City"
-          @input="clearError"
-        />
-        <input
-          type="text"
-          v-model="state"
-          placeholder="Enter State"
-          maxlength="2"
-          @input="clearError"
-        />
-      </div>
-      <button class="filters" @click="toggleLocationType">
-        {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
-      </button>
-      <button class="filters" @click="fetchRestaurants">Search</button>
     </div>
 
     <!-- Error Message -->
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-    <!-- Filters for Searching Restaurants -->
-    <div class="filters">
-      <input type="text" v-model="searchQuery" placeholder="Search restaurants..." />
-      <button @click="surpriseMe" :disabled="!restaurants.length">Surprise Me!</button>
+    <!-- Secondary Filters -->
+    <div class="filter-card secondary-filters-card">
+      <h3 class="filter-title">Refine Your Search</h3>
+      <p class="filter-subtitle">
+        Narrow down results and find exactly what you’re craving.
+      </p>
+      <div class="secondary-filters">
+        <input 
+          type="text" 
+          v-model="searchQuery" 
+          placeholder="Search by name..."
+          class="search-box"
+        />
+
+        <div class="checkbox-filters">
+          <label>
+            <input type="checkbox" v-model="filterOpenNow" /> Open Now
+          </label>
+          <label>
+            <input type="checkbox" v-model="filterHighRating" /> 4★ & Up
+          </label>
+          <label>
+            <input type="checkbox" v-model="filterKidFriendly" /> Kid Friendly
+          </label>
+        </div>
+
+        <button 
+          class="btn-surprise" 
+          @click="surpriseMe" 
+          :disabled="!restaurants.length"
+        >
+          Surprise Me!
+        </button>
+      </div>
     </div>
 
     <!-- Restaurant Card Stack -->
-    <div v-if="restaurants.length" class="stack-interface">
+    <div v-if="filteredRestaurants.length" class="stack-interface">
       <div
         v-for="(restaurant, index) in filteredRestaurants"
-        :key="restaurant.id"
+        :key="restaurant.id || index"
         class="restaurant-card-wrapper"
         :style="getCardStyle(index)"
         ref="cards"
@@ -63,13 +114,14 @@
         <RestaurantCard :restaurant="restaurant" />
       </div>
     </div>
+
     <div v-else-if="!isLoading && hasSearched" class="no-results">
-      No restaurants found. Try another search.
+      No restaurants found. Try another search or adjust your filters.
     </div>
     <div v-if="isLoading" class="loading">Loading restaurants...</div>
 
-      <!-- Voting Trigger Button -->
-      <button id="open-voting-btn" @click="toggleVotingPanel">
+    <!-- Voting Trigger Button -->
+    <button id="open-voting-btn" @click="toggleVotingPanel">
       <span class="icon">🗳️</span> Vote
     </button>
 
@@ -96,9 +148,7 @@
           </li>
         </ul>
       </div>
-    
     </div>
-
 
     <!-- Audio elements for swipe sounds -->
     <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
@@ -120,7 +170,7 @@ export default {
         { name: "Sushi Spot", votes: 0 },
         { name: "Taco Time", votes: 0 },
       ],
-      justVotedIndex: null, // To highlight the recently voted restaurant
+      justVotedIndex: null,
       restaurants: [],
       isDragging: false,
       startX: 0,
@@ -133,14 +183,20 @@ export default {
       isLoading: false,
       hasSearched: false,
       errorMessage: "",
-      swipeDirection: null // 'right' or 'left'
+      swipeDirection: null, // 'right' or 'left'
+      // Additional filters
+      filterOpenNow: false,
+      filterHighRating: false,
+      filterKidFriendly: false,
     };
   },
   computed: {
     filteredRestaurants() {
-      return this.restaurants.filter((r) =>
-        r.name.toLowerCase().includes(this.searchQuery.toLowerCase())
-      );
+      return this.restaurants
+        .filter(r => r.name.toLowerCase().includes(this.searchQuery.toLowerCase()))
+        .filter(r => !this.filterOpenNow || r.openNow === true)
+        .filter(r => !this.filterHighRating || (r.rating && r.rating >= 4))
+        .filter(r => !this.filterKidFriendly || r.kidFriendly === true);
     },
     isAuthenticated() {
       return this.$store.state.token !== "";
@@ -182,14 +238,17 @@ export default {
         `http://localhost:9000/api/restaurants/fetch?queryType=${queryType}&queryValue=${queryValue}`
       )
         .then((response) => {
-          console.log(response);
           if (!response.ok) {
             throw new Error("Failed to fetch restaurants");
           }
           return response.json();
         })
         .then((data) => {
-          this.restaurants = data;
+          // Randomly assign kidFriendly to each restaurant if not already present
+          this.restaurants = data.map(r => ({
+            ...r,
+            kidFriendly: Math.random() > 0.5 // Random true/false
+          }));
           if (!data.length) {
             this.errorMessage = "No restaurants found. Try another search.";
           }
@@ -222,7 +281,6 @@ export default {
     voteForOption(index) {
       this.votingOptions[index].votes += 1;
       this.justVotedIndex = index;
-      // Remove highlight after a short delay
       setTimeout(() => {
         this.justVotedIndex = null;
       }, 800);
@@ -245,10 +303,10 @@ export default {
       if (!this.isDragging) return;
       this.isDragging = false;
 
-      const topCard = this.$refs.cards[this.activeIndex]; 
+      const topCard = this.$refs.cards[this.activeIndex];
       if (!topCard) return;
 
-      const favoritedRestaurant = this.restaurants[this.activeIndex]; 
+      const favoritedRestaurant = this.filteredRestaurants[this.activeIndex];
       if (this.currentX > 100) {
         // Swipe right - favorite
         this.swipeDirection = 'right';
@@ -261,7 +319,8 @@ export default {
         }
 
         this.animateCardRemoval(topCard, () => {
-          this.restaurants.splice(this.activeIndex, 1);
+          const removeIndex = this.restaurants.indexOf(favoritedRestaurant);
+          if (removeIndex !== -1) this.restaurants.splice(removeIndex, 1);
           this.highlightFavoritesLink();
         });
       } else if (this.currentX < -100) {
@@ -270,7 +329,8 @@ export default {
         this.$refs.rejectSound.play();
 
         this.animateCardRemoval(topCard, () => {
-          this.restaurants.splice(this.activeIndex, 1);
+          const removeIndex = this.restaurants.indexOf(favoritedRestaurant);
+          if (removeIndex !== -1) this.restaurants.splice(removeIndex, 1);
         });
       } else {
         // Reset position
@@ -294,8 +354,6 @@ export default {
         console.error("User is not authenticated.");
         return;
       }
-
-      console.log("Sending payload with place_id:", { place_id: placeId });
 
       fetch("http://localhost:9000/api/favorites", {
         method: "POST",
@@ -356,53 +414,181 @@ export default {
   padding: 1rem;
   max-width: 900px;
   margin: 0 auto;
+  font-family: "Lato", sans-serif;
 }
 
-/* Filters Section */
-.filters {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  margin-bottom: 1rem;
+h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
 }
 
-.filters .location-inputs {
+/* Filter Cards */
+.filter-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.filter-title {
+  margin-top: 0;
+  font-family: "Playfair Display", serif;
+  font-size: 1.4rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.filter-subtitle {
+  font-size: 0.9rem;
+  color: #555;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+/* Location Filters Layout */
+.location-filters {
   display: flex;
   flex-wrap: wrap;
   gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
 }
 
-.filters button {
-  padding: 0.6rem 1.2rem;
-  font-size: 1rem;
+.location-inputs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.city-state-inputs {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
   font-weight: bold;
-  background-color: #737f9a;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
+  color: #333;
 }
 
-.filters button:hover {
-  background-color: #737f9a;
-  transform: scale(1.05);
-}
-
-.filters input {
-  padding: 0.6rem;
+.location-inputs input {
+  padding: 0.5rem;
   border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  width: calc(100% - 2rem);
+  border-radius: 4px;
+  font-size: 0.9rem;
 }
 
-/* Loading Indicator */
-.filters .loading-indicator {
+.location-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-switch, .btn-search {
+  background: #e0c9a6;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.3s ease;
+}
+.btn-switch:hover, .btn-search:hover {
+  background: #e7b76b;
+}
+
+/* Error Message */
+.error-message {
+  color: red;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: bold;
+}
+
+/* Secondary Filters */
+.secondary-filters-card {
+  /* Additional styling to differentiate from location filters if desired */
+}
+
+.secondary-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.search-box {
+  flex: 1;
+  max-width: 180px;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.checkbox-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.checkbox-filters label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.btn-surprise {
+  background: #737f9a;
+  color: #fff;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.3s ease;
+}
+.btn-surprise:hover {
+  background: #0056b3;
+}
+.btn-surprise:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* No Results */
+.no-results {
   text-align: center;
   font-size: 1.2rem;
-  color: #555;
+  color: gray;
+  margin-bottom: 1rem;
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  font-size: 1.5rem;
 }
 
 /* Stack Interface */
@@ -431,10 +617,7 @@ export default {
   cursor: grab;
 }
 
-.restaurant-card-wrapper.active {
-  visibility: visible;
-}
-
+/* Swipe Overlays */
 .overlay {
   position: absolute;
   top: 0;
@@ -449,18 +632,16 @@ export default {
   z-index: 10;
   pointer-events: none;
 }
-
 .check-mark {
   color: green;
   font-size: 4rem;
 }
-
 .x-mark {
   color: red;
   font-size: 4rem;
 }
 
-/* Highlight for Favorites link */
+/* Highlight for Favorites Link */
 .nav-links li a.highlight {
   background-color: #c8e6c9 !important;
   color: #2e7d32 !important;
@@ -471,7 +652,7 @@ export default {
 #voting-panel {
   position: fixed;
   top: 0;
-  right: -320px; /* Slightly wider for more comfortable spacing */
+  right: -320px;
   width: 320px;
   height: 100%;
   background-color: #fff7ed;
@@ -525,7 +706,7 @@ export default {
 .voting-content {
   padding: 15px;
   overflow-y: auto;
-  flex: 1; /* Ensure list expands to fill space */
+  flex: 1;
   font-family: 'Lato', sans-serif;
 }
 
@@ -545,7 +726,7 @@ export default {
 }
 
 .voting-list li.voted {
-  background-color: #e0f7df; /* light green tint to show recent vote */
+  background-color: #e0f7df;
 }
 
 .voting-item {
@@ -578,7 +759,6 @@ export default {
   font-size: 0.9rem;
   color: #555;
 }
-
 .votes strong {
   color: #333;
 }
@@ -594,11 +774,9 @@ export default {
   font-weight: bold;
   transition: background-color 0.3s ease, transform 0.1s ease;
 }
-
 .vote-btn:hover {
   background-color: #e0c9a6;
 }
-
 .vote-btn:active {
   transform: scale(0.95);
 }
@@ -622,12 +800,10 @@ export default {
   font-family: 'Lato', sans-serif;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
 #open-voting-btn:hover {
   transform: scale(1.05);
   background-color: #a56d4e;
 }
-
 #open-voting-btn .icon {
   font-size: 1.2rem;
 }
