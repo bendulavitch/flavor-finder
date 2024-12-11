@@ -1,7 +1,7 @@
 <template>
   <div class="restaurant-card" @click="goToWebsite">
     <img 
-      :src="restaurant.image || 'ben.jpg'" 
+      :src="restaurant.photo || 'ben.jpg'" 
       alt="Restaurant Image" 
       class="restaurant-image" 
     />
@@ -9,6 +9,10 @@
       <h2>{{ restaurant.name }}</h2>
       <p class="address">{{ restaurant.address }}</p>
       
+ <!-- Render place_id for debugging or use -->
+        <p v-if="restaurant.placeId">Place ID: {{ restaurant.placeId }}</p>
+        
+
       <!-- Rating -->
       <div class="rating-section">
         <span v-if="restaurant.rating" class="rating">⭐ {{ restaurant.rating }}</span>
@@ -52,6 +56,12 @@ export default {
     restaurant: {
       type: Object,
       required: true,
+      default: () => ({
+      name: "Unknown Restaurant",
+      address: "Unknown Address",
+      rating: "N/A",
+      photo: null,
+    }),
     },
   },
   methods: {

@@ -209,28 +209,36 @@ export default {
       }
     },
     handleMouseUp() {
-      if (!this.isDragging) return;
-      this.isDragging = false;
-      const topCard = this.$refs.cards[this.activeIndex];
-      if (!topCard) return;
+  if (!this.isDragging) return;
+  this.isDragging = false;
 
-      if (this.currentX > 100) {
-        // Swipe right to add to favorites
-        const favoritedRestaurant = this.restaurants[this.activeIndex];
-        console.log(JSON.stringify(favoritedRestaurant));
-        this.addToFavorites(favoritedRestaurant.endpoint); // Pass the endpoint
-        this.restaurants.splice(this.activeIndex, 1);
-        
-      } else if (this.currentX < -100) {
-        // Swipe left to skip
-        this.restaurants.splice(this.activeIndex, 1);
-      } else {
-        // Reset position
-        topCard.style.transition = "transform 0.3s ease";
-        topCard.style.transform = "translateX(0) rotate(0)";
-      }
-      this.currentX = 0;
-    },
+  const topCard = this.$refs.cards[this.activeIndex]; // Get the current top card
+  if (!topCard) return;
+
+  const favoritedRestaurant = this.restaurants[this.activeIndex]; // Get the restaurant corresponding to the top card
+      console.log(this.activeIndex.placeId);
+  if (this.currentX > 100) {
+    // Swipe right to add to favorites
+    if (favoritedRestaurant && favoritedRestaurant.placeId) {
+      this.addToFavorites(favoritedRestaurant.placeId); // Call addToFavorites with place_id
+    } else {
+      console.error("No place_id found for the selected restaurant.");
+    }
+    this.restaurants.splice(this.activeIndex, 1); // Remove card from stack
+  } else if (this.currentX < -100) {
+    // Swipe left to skip
+    this.restaurants.splice(this.activeIndex, 1); // Remove card from stack
+  } else {
+    // Reset position
+    topCard.style.transition = "transform 0.3s ease";
+    topCard.style.transform = "translateX(0) rotate(0)";
+  }
+
+  this.currentX = 0; // Reset drag distance
+}
+
+
+,
     attachCardListeners() {
       const cards = this.$refs.cards || [];
       cards.forEach((card) => {
@@ -241,33 +249,33 @@ export default {
         }
       });
     },
-    addToFavorites(endpoint) {
+    addToFavorites(placeId) {
   if (!this.isAuthenticated) {
     console.error("User is not authenticated.");
     return;
   }
 
-  console.log("Sending payload:", { endpoint }); // Debug log to verify the payload
-  
+  console.log("Sending payload with place_id:", { place_id: placeId });
+
   fetch("http://localhost:9000/api/favorites", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${this.$store.state.token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ endpoint }), // Ensure the endpoint is included here
+    body: JSON.stringify({ place_id: placeId }), // Send place_id
   })
     .then((response) => {
       if (!response.ok) {
-        console.log(response.content);
         throw new Error("Failed to add to favorites");
       }
-      console.log(`Endpoint ${endpoint} added to favorites!`);
+      console.log(`Place ID ${placeId} added to favorites!`);
     })
     .catch((error) => {
       console.error("Error adding to favorites:", error);
     });
 }
+
 
 ,
   },

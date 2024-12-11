@@ -38,41 +38,51 @@ public class FavoriteController {
     public ResponseEntity<Void> addFavorite(
             @RequestHeader("Authorization") String authHeader,
             @RequestBody Map<String, String> payload) {
-        String restaurantEndpoint = payload.get("endpoint");
-        
 
-        if (restaurantEndpoint == null || restaurantEndpoint.trim().isEmpty()) {
-            throw new IllegalArgumentException("Restaurant endpoint is required.");
+        // Validate the payload
+        String placeId = payload.get("place_id");
+        if (placeId == null || placeId.trim().isEmpty()) {
+            throw new IllegalArgumentException("Place ID is required.");
         }
 
-        // Extract username from the JWT token
+        // Extract the username from the JWT token
         String token = authHeader.replace("Bearer ", ""); // Remove "Bearer " prefix
         String username = tokenProvider.getAuthentication(token).getName();
 
-        // Call the service method with the username and restaurant endpoint
+        // Ensure username is valid
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid token: Username cannot be determined.");
+        }
+
+        // Convert place_id to endpoint URL (if needed)
+        String restaurantEndpoint = "https://maps.googleapis.com/maps/api/place/details/json?place_id=" + placeId;
+
+        // Call the service method to add the favorite
         favoriteService.addFavorite(username, restaurantEndpoint);
 
+        // Return HTTP 200 OK
         return ResponseEntity.ok().build();
     }
+
 
 
 
     @GetMapping
     public ResponseEntity<List<String>> getFavorites(@RequestHeader("Authorization") String authHeader) {
         // Extract username from the JWT token
-        String username = tokenProvider.getAuthentication(authHeader.replace("Bearer ", "")).getName();
+        String token = authHeader.replace("Bearer ", ""); // Remove "Bearer " prefix
+        String username = tokenProvider.getAuthentication(token).getName();
 
-        // Fetch user by username
-        User user = userDao.getUserByUsername(username);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found for username: " + username);
+        // Ensure username is valid
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid token: Username cannot be determined.");
         }
-        // Use the userId from the User object
-        int userId = user.getId();
+
         // Retrieve favorite endpoints for the user
-        List<String> favorites = favoriteService.getFavoriteEndpoints(userId);
-        return ResponseEntity.ok(favorites);
+        List<String> favorites = favoriteService.getFavoriteEndpoints(username);
+        return ResponseEntity.ok(favorites); // Return the list of favorite endpoints
     }
+
 
 
     @DeleteMapping
@@ -80,17 +90,20 @@ public class FavoriteController {
             @RequestHeader("Authorization") String authHeader,
             @RequestParam String endpoint) {
         // Extract username from the JWT token
-        String username = tokenProvider.getAuthentication(authHeader.replace("Bearer ", "")).getName();
-        // Fetch user by username
-        User user = userDao.getUserByUsername(username);
-        if (user == null) {
-            throw new IllegalArgumentException("User not found for username: " + username);
+        String token = authHeader.replace("Bearer ", ""); // Remove "Bearer " prefix
+        String username = tokenProvider.getAuthentication(token).getName();
+
+        // Ensure username is valid
+        if (username == null || username.trim().isEmpty()) {
+            throw new IllegalArgumentException("Invalid token: Username cannot be determined.");
         }
-        // Use the userId from the User object
-        int userId = user.getId();
-        // Remove the restaurant endpoint from the user's favorites
-        favoriteService.removeFavorite(userId, endpoint);
+
+        // Call the service method to remove the favorite
+        favoriteService.removeFavorite(username, endpoint);
+
+        // Return HTTP 204 No Content
         return ResponseEntity.noContent().build();
     }
+
 
 }
