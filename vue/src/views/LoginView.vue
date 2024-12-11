@@ -1,16 +1,15 @@
 <template>
   <!-- Hero Section -->
   <section id="hero">
-    <video autoplay muted loop id="hero-video">
+    <video autoplay muted id="hero-video" @ended="fadeOutVideo">
       <source src="/hero.mp4" type="video/mp4" />
       Your browser does not support the video tag.
     </video>
-    <div class="hero-content" data-aos="fade-up">
+    <div class="hero-content" v-bind:class="{'visible': textVisible}" data-aos="fade-up">
       <h1>Welcome to <span class="highlight">Flavor Finder</span></h1>
       <p class="hero-subheading">Discover your next favorite restaurant effortlessly.</p>
       <router-link v-bind:to="{ name: 'register' }" class="btn-primary">Sign Up</router-link>
     </div>
-
   </section>
 
   <!-- Login Section -->
@@ -47,7 +46,7 @@
         </div>
         <button type="submit" class="btn-primary">Sign In</button>
         <p class="sign-up-prompt">
-          Don’t have an account?
+          Don't have an account?
           <router-link v-bind:to="{ name: 'register' }">Sign up here.</router-link>
         </p>
       </form>
@@ -65,15 +64,16 @@ export default {
         username: "",
         password: ""
       },
-      invalidCredentials: false
+      invalidCredentials: false,
+      textVisible: false // Track text visibility
     };
   },
 
   mounted() {
     // Scroll to the top of the page on component load
     window.scrollTo(0, 0);
-
   },
+  
   methods: {
     login() {
       authService
@@ -91,13 +91,26 @@ export default {
             this.invalidCredentials = true;
           }
         });
+    },
+    
+    fadeOutVideo() {
+      const video = document.getElementById('hero-video');
+      video.style.transition = "opacity 2s ease-out";
+      video.style.opacity = 0;
+      setTimeout(() => {
+        video.style.display = "none";
+        this.fadeInText(); // Trigger text fade-in after video ends
+      }, 2000); // Hide the video after fading out
+    },
+    
+    fadeInText() {
+      this.textVisible = true; // Show the text after video finishes
     }
   }
 };
 </script>
 
 <style scoped>
-
 /* Fade-up animation */
 @keyframes fadeUp {
   0% {
@@ -110,6 +123,18 @@ export default {
   }
 }
 
+/* Animated Floating Background */
+@keyframes floatBackground {
+  0% {
+    background-color: #fff7ed;
+  }
+  50% {
+    background-color: #e0c9a6;
+  }
+  100% {
+    background-color: #fff7ed;
+  }
+}
 
 /* Hero Section */
 #hero {
@@ -121,6 +146,8 @@ export default {
   text-align: center;
   overflow: hidden;
   color: #e0c9a6;
+  background: #fff7ed; /* Initial background color */
+  animation: floatBackground 8s ease-in-out infinite; /* Add floating animation */
 }
 
 #hero-video {
@@ -138,7 +165,12 @@ export default {
   text-align: center;
   padding: 20px;
   max-width: 600px;
- 
+  opacity: 0; /* Initially hide the text */
+  transition: opacity 2s ease-in-out; /* Smooth transition for fading in */
+}
+
+#hero .hero-content.visible {
+  opacity: 1; /* Make text visible after video ends */
   animation: fadeUp 1.5s ease-in-out;
 }
 
@@ -154,7 +186,6 @@ export default {
   margin-bottom: 15px;
   color: #fff;
   text-shadow: 3px 3px 8px rgba(0, 0, 0, 0.8);
-  
 }
 
 #hero h1 .highlight {
@@ -172,11 +203,7 @@ export default {
 #hero p {
   font-size: 1.5rem;
   margin-bottom: 20px;
-  
 }
-
-
-
 
 .btn-primary {
   padding: 12px 24px;
@@ -193,6 +220,7 @@ export default {
   background-color: #db9773; /* Slightly lighter gold on hover */
   transform: translateY(-2px); /* Subtle hover effect */
 }
+
 /* Login Section */
 #login-section {
   padding: 40px 20px;

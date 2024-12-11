@@ -66,24 +66,37 @@
     </div>
     <div v-if="isLoading" class="loading">Loading restaurants...</div>
 
-    <!-- Slide-Out Messaging Panel -->
-    <div id="messaging-panel" :class="{ visible: isMessagingOpen }">
-      <header class="messaging-header">
-        <h3>Inbox</h3>
-        <button @click="toggleMessaging" class="close-btn">X</button>
+      <!-- Voting Trigger Button -->
+      <button id="open-voting-btn" @click="toggleVotingPanel">
+      <span class="icon">🗳️</span> Vote
+    </button>
+
+    <!-- Slide-Out Voting Panel -->
+    <div id="voting-panel" :class="{ visible: isVotingOpen }">
+      <header class="voting-header">
+        <h3>Local Picks</h3>
+        <p class="subtitle">Vote for your favorite spot below</p>
+        <button @click="toggleVotingPanel" class="close-btn">×</button>
       </header>
-      <div class="messaging-content">
-        <ul class="message-list">
-          <li v-for="message in messages" :key="message.id" @click="openChat(message.id)">
-            <h4>{{ message.title }}</h4>
-            <p>{{ message.preview }}</p>
+      <div class="voting-content">
+        <ul class="voting-list">
+          <li v-for="(option, index) in votingOptions" :key="index" :class="{voted: justVotedIndex === index}">
+            <div class="voting-item">
+              <div class="info">
+                <span class="restaurant-icon">🍽️</span>
+                <span class="restaurant-name">{{ option.name }}</span>
+              </div>
+              <div class="actions">
+                <span class="votes">Votes: <strong>{{ option.votes }}</strong></span>
+                <button @click="voteForOption(index)" class="vote-btn">Vote</button>
+              </div>
+            </div>
           </li>
         </ul>
-        <button class="new-chat-btn" @click="createNewChat">+ New Chat</button>
       </div>
+    
     </div>
-    <!-- Open Messaging Button -->
-    <button id="open-messaging-btn" @click="toggleMessaging">Messages</button>
+
 
     <!-- Audio elements for swipe sounds -->
     <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
@@ -99,11 +112,13 @@ export default {
   data() {
     return {
       searchQuery: "",
-      isMessagingOpen: false,
-      messages: [
-        { id: 1, title: "Group 1", preview: "Last message in Group 1" },
-        { id: 2, title: "Group 2", preview: "Last message in Group 2" },
+      isVotingOpen: false,
+      votingOptions: [
+        { name: "Pizza Palace", votes: 0 },
+        { name: "Sushi Spot", votes: 0 },
+        { name: "Taco Time", votes: 0 },
       ],
+      justVotedIndex: null, // To highlight the recently voted restaurant
       restaurants: [],
       isDragging: false,
       startX: 0,
@@ -199,14 +214,16 @@ export default {
         opacity: 0.8 - index * 0.1,
       };
     },
-    toggleMessaging() {
-      this.isMessagingOpen = !this.isMessagingOpen;
+    toggleVotingPanel() {
+      this.isVotingOpen = !this.isVotingOpen;
     },
-    openChat(chatId) {
-      alert(`Opening chat with ID: ${chatId}`);
-    },
-    createNewChat() {
-      alert("Creating a new chat...");
+    voteForOption(index) {
+      this.votingOptions[index].votes += 1;
+      this.justVotedIndex = index;
+      // Remove highlight after a short delay
+      setTimeout(() => {
+        this.justVotedIndex = null;
+      }, 800);
     },
     handleMouseDown(e) {
       this.startX = e.clientX;
@@ -448,90 +465,168 @@ export default {
   box-shadow: 0 0 10px 2px #c8e6c9;
 }
 
-/* Slide-Out Messaging Panel */
-#messaging-panel {
+/* Voting Panel Styles */
+#voting-panel {
   position: fixed;
   top: 0;
-  right: -300px;
-  width: 300px;
+  right: -320px; /* Slightly wider for more comfortable spacing */
+  width: 320px;
   height: 100%;
   background-color: #fff7ed;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-  transition: right 0.3s ease-in-out;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+  transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 1001;
+  display: flex;
+  flex-direction: column;
 }
 
-#messaging-panel.visible {
+#voting-panel.visible {
   right: 0;
 }
 
-.messaging-header {
+.voting-header {
   background-color: #c88f67;
   color: white;
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 20px;
+  position: relative;
+  text-align: center;
+}
+.voting-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-family: 'Playfair Display', serif;
+}
+.voting-header .subtitle {
+  margin: 5px 0 0;
+  font-size: 0.9rem;
+  font-family: 'Lato', sans-serif;
+  opacity: 0.9;
 }
 
-.messaging-content {
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.6rem;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  cursor: pointer;
+  font-weight: bold;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+.close-btn:hover {
+  transform: scale(1.2);
+}
+
+.voting-content {
   padding: 15px;
   overflow-y: auto;
+  flex: 1; /* Ensure list expands to fill space */
+  font-family: 'Lato', sans-serif;
 }
 
-.message-list {
+.voting-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.message-list li {
-  padding: 10px;
+.voting-list li {
+  background: #ffffff;
+  border-radius: 8px;
   margin-bottom: 10px;
-  background-color: #f9f1e7;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.message-list li:hover {
-  background-color: #e0c9a6;
-}
-
-.new-chat-btn {
-  display: block;
-  width: 100%;
   padding: 10px;
-  margin-top: 10px;
-  background-color: #c88f67;
-  color: white;
+  transition: background-color 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.voting-list li.voted {
+  background-color: #e0f7df; /* light green tint to show recent vote */
+}
+
+.voting-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.voting-item .info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.restaurant-icon {
+  font-size: 1.2rem;
+}
+.restaurant-name {
+  font-weight: bold;
+  font-size: 1rem;
+  color: #5c5c5c;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.votes {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.votes strong {
+  color: #333;
+}
+
+.vote-btn {
+  background-color: #f49f0a;
+  color: #fff;
   border: none;
   border-radius: 5px;
+  padding: 5px 12px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  font-size: 0.9rem;
+  font-weight: bold;
+  transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
-.new-chat-btn:hover {
-  background-color: #a56d4e;
+.vote-btn:hover {
+  background-color: #d9890c;
 }
 
-/* Open Messaging Button */
-#open-messaging-btn {
+.vote-btn:active {
+  transform: scale(0.95);
+}
+
+/* Voting Trigger Button */
+#open-voting-btn {
   position: fixed;
-  bottom: 20px;
+  bottom: 80px;
   right: 20px;
   background-color: #c88f67;
   color: white;
   padding: 10px 15px;
-  border-radius: 50%;
+  border-radius: 8px;
   border: none;
-  font-size: 1.2rem;
+  font-size: 1rem;
   cursor: pointer;
   transition: transform 0.2s, background-color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Lato', sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-#open-messaging-btn:hover {
-  transform: scale(1.1);
+#open-voting-btn:hover {
+  transform: scale(1.05);
   background-color: #a56d4e;
+}
+
+#open-voting-btn .icon {
+  font-size: 1.2rem;
 }
 </style>
