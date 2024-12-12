@@ -5,6 +5,10 @@ DROP TABLE IF EXISTS skipped;
 DROP TABLE IF EXISTS favorites;
 DROP TABLE IF EXISTS restaurants;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS vote_sessions;
+DROP TABLE IF EXISTS restaurant_options;
+DROP TABLE IF EXISTS user_votes;
+
 
 CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
@@ -43,5 +47,34 @@ CREATE TABLE skipped (
     CONSTRAINT FK_skipped_restaurant FOREIGN KEY (restaurant_id) REFERENCES restaurants(restaurant_id) ON DELETE CASCADE,
     UNIQUE (user_id, restaurant_id)
 );
+
+CREATE TABLE vote_sessions (
+    id SERIAL PRIMARY KEY,
+    creator_username VARCHAR(50) NOT NULL,
+    query_type VARCHAR(20) NOT NULL,
+    query_value VARCHAR(100) NOT NULL,
+    room_code VARCHAR(10) UNIQUE NOT NULL,
+    round INT NOT NULL DEFAULT 1, -- Tracks current round (1 or 2)
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE restaurant_options (
+    id SERIAL PRIMARY KEY,
+    vote_session_id INT NOT NULL REFERENCES vote_sessions(id),
+    name VARCHAR(200) NOT NULL,
+    place_id VARCHAR(200) NOT NULL,
+    votes_round1 INT NOT NULL DEFAULT 0,
+    votes_round2 INT NOT NULL DEFAULT 0
+);
+
+CREATE TABLE user_votes (
+    id SERIAL PRIMARY KEY,
+    vote_session_id INT NOT NULL REFERENCES vote_sessions(id),
+    restaurant_option_id INT NOT NULL REFERENCES restaurant_options(id),
+    username VARCHAR(50) NOT NULL,
+    round INT NOT NULL, -- Which round the vote is for (1 or 2)
+    in_favor BOOLEAN NOT NULL
+);
+
 
 COMMIT TRANSACTION;

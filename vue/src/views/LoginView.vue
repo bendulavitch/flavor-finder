@@ -6,7 +6,7 @@
       Your browser does not support the video tag.
     </video>
     <div class="hero-content" v-bind:class="{'visible': textVisible}" data-aos="fade-up">
-      <h1>Welcome to <span class="highlight">Flavor Finder</span></h1>
+      <img class="herologo" src="/Images/greybox.png">
       <p class="hero-subheading">Discover your next favorite restaurant effortlessly.</p>
       <router-link v-bind:to="{ name: 'register' }" class="btn-primary">Sign Up</router-link>
     </div>
@@ -137,6 +137,12 @@ export default {
 }
 
 /* Hero Section */
+
+.herologo {
+  width: 233px; /* Set the width */
+  height: 210px; /* Set the height */
+}
+
 #hero {
   position: relative;
   height: 100vh;

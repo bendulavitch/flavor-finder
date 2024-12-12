@@ -6,7 +6,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
 <nav>
   <div class="logo">
-    <a href="/">Flavor Finder</a>
+    <img class="headlogo" src="../Images/headerlogo.png" alt="Flavor Finder Logo" />
+    <a href="/">&nbsp;  Flavor Finder</a>
   </div>
   <ul class="nav-links">
     <li>
@@ -41,6 +42,7 @@
         <div class="footer-section">
           <h3>Flavor Finder</h3>
           <p>Discover your next favorite restaurant effortlessly.</p>
+          <img class="footlogo" src="../Images/FFOCLOGO.png" alt="Flavor Finder Logo" />
         </div>
         <div class="footer-section">
           <h3>Quick Links</h3>
@@ -91,7 +93,7 @@ export default {
     },
     logout() {
       this.$store.commit("LOGOUT");
-      this.$router.push("/logout");
+      this.$router.push("/login");
     },
   },
 };
@@ -100,6 +102,17 @@ export default {
 
 <!-- Nav Bar CSS -->
 <style scoped>
+
+.headlogo {
+  width: 40px; /* Set the width */
+  height: 32px; /* Set the height */
+}
+
+.footlogo {
+  width: 100px; /* Set the width */
+  height: 80px; /* Set the height */
+}
+
 /* General Body Styling */
 body {
   background-color: #fff7ed; /* Light cream background */

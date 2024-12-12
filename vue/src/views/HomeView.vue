@@ -7,11 +7,21 @@
       <div class="filter-card">
         <h3 class="filter-title">Search by Location</h3>
         <p class="filter-subtitle">
-          Quickly find restaurants by providing a Zip Code or City and State.
+          Quickly find restaurants by providing a location method below.
         </p>
         <div class="location-filters">
           <div class="location-inputs">
-            <div class="input-group" v-if="useZipCode">
+            <!-- Location Mode Selection -->
+            <div class="input-group">
+              <label>Location Mode</label>
+              <select v-model="locationMode" @change="clearError">
+                <option value="current">Current Location</option>
+                <option value="zip">Zip Code</option>
+                <option value="city">City/State</option>
+              </select>
+            </div>
+
+            <div class="input-group" v-if="locationMode === 'zip'">
               <label for="zip-code">Zip Code</label>
               <input
                 id="zip-code"
@@ -22,7 +32,7 @@
               />
             </div>
 
-            <div class="city-state-inputs" v-else>
+            <div class="city-state-inputs" v-else-if="locationMode === 'city'">
               <div class="input-group">
                 <label for="city">City</label>
                 <input
@@ -45,16 +55,23 @@
                 />
               </div>
             </div>
+
           </div>
 
           <div class="location-buttons">
-            <button class="btn-switch" @click="toggleLocationType">
-              {{ useZipCode ? "Switch to City/State" : "Switch to Zip Code" }}
-            </button>
             <button class="btn-search" @click="fetchRestaurants">Search</button>
+
+
+            <div v-if="filtersPanelOpen">
+            <button v-if="filtersPanelOpen" class="btn-more-filters" @click="toggleFiltersPanel">
+              Less Filters  
+              </button>
+              </div>
+              <div v-else>
             <button class="btn-more-filters" @click="toggleFiltersPanel">
               More Filters
             </button>
+            </div>
           </div>
         </div>
 
@@ -101,6 +118,17 @@
       <!-- Error Message -->
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
+      <div class="logo-card-container">
+      <!-- Logo -->
+      <div 
+        class="logo-container" 
+        v-show="showLogo" 
+        :class="{ 'fade-in': showLogo }"
+      >
+        <img src="/Images/headerlogo.png" alt="Logo" id="logo" />
+      </div>
+      </div>
+
       <!-- Restaurant Card Stack -->
       <div v-if="filteredRestaurants.length" class="stack-interface">
         <div
@@ -135,25 +163,26 @@
       <!-- Slide-Out Voting Panel -->
       <div id="voting-panel" :class="{ visible: isVotingOpen }">
         <header class="voting-header">
-          <h3>Local Picks</h3>
-          <p class="subtitle">Vote for your favorite spot below</p>
+          <h3>Group Voting</h3>
+          <p class="subtitle">Create or Join a group vote</p>
           <button @click="toggleVotingPanel" class="close-btn">×</button>
         </header>
         <div class="voting-content">
-          <ul class="voting-list">
-            <li v-for="(option, index) in votingOptions" :key="index" :class="{voted: justVotedIndex === index}">
-              <div class="voting-item">
-                <div class="info">
-                  <span class="restaurant-icon">🍽️</span>
-                  <span class="restaurant-name">{{ option.name }}</span>
-                </div>
-                <div class="actions">
-                  <span class="votes">Votes: <strong>{{ option.votes }}</strong></span>
-                  <button @click="voteForOption(index)" class="vote-btn">Vote</button>
-                </div>
-              </div>
-            </li>
-          </ul>
+          <div class="create-session">
+            <h4>Create a New Vote Session</h4>
+            <button @click="createVoteSession">Create Session</button>
+            <div v-if="voteRoomCode" class="invite-code">
+              <p>Your room code: <strong>{{ voteRoomCode }}</strong></p>
+              <p><button @click="goToVoteSession" class="btn-go">Go to Voting Page</button></p>
+            </div>
+          </div>
+          <hr>
+          <div class="join-session">
+            <h4>Join an Existing Session</h4>
+            <input v-model="searchQuery" placeholder="Enter room code" />
+            <button @click="joinExistingSession" class="btn-join">Join Session</button>
+          </div>
+          <div v-if="voteError" class="error-message">{{ voteError }}</div>
         </div>
       </div>
 
@@ -162,6 +191,12 @@
       <audio ref="rejectSound" src="/Images/x.mp3" preload="auto"></audio>
     </div>
     <br>
+    <br>
+    <br>
+    <br>
+  
+  
+  <br>
   </body>
   
 </template>
@@ -173,32 +208,32 @@ export default {
   components: { RestaurantCard },
   data() {
     return {
+
+      showLogo: false,
       searchQuery: "",
       isVotingOpen: false,
       filtersPanelOpen: false,
-      votingOptions: [
-        { name: "Pizza Palace", votes: 0 },
-        { name: "Sushi Spot", votes: 0 },
-        { name: "Taco Time", votes: 0 },
-      ],
-      justVotedIndex: null,
       restaurants: [],
       isDragging: false,
       startX: 0,
       currentX: 0,
       activeIndex: 0,
-      useZipCode: true,
+      locationMode: 'current', // 'current', 'zip', 'city'
       zipCode: "",
       city: "",
       state: "",
       isLoading: false,
       hasSearched: false,
       errorMessage: "",
-      swipeDirection: null, // 'right' or 'left'
-      // Additional filters
+      swipeDirection: null,
       filterOpenNow: false,
       filterHighRating: false,
       filterKidFriendly: false,
+      voteRoomCode: null,
+      voteError: "",
+      joinCode: "",
+      userLat: null,
+      userLng: null
     };
   },
   computed: {
@@ -214,11 +249,10 @@ export default {
     },
   },
   methods: {
+    
+    
     toggleLocationType() {
-      this.useZipCode = !this.useZipCode;
-      this.zipCode = "";
-      this.city = "";
-      this.state = "";
+      // No longer needed since using locationMode
       this.clearError();
     },
     clearError() {
@@ -228,56 +262,96 @@ export default {
       this.filtersPanelOpen = !this.filtersPanelOpen;
     },
     fetchRestaurants() {
+      
       this.errorMessage = "";
       this.isLoading = true;
       this.hasSearched = true;
+      
+      setTimeout(() => {
+        this.showLogo = true;
+      }, 2000);
 
-      // Validate Input
-      if (this.useZipCode && !this.zipCode.trim()) {
+      if (this.locationMode === 'zip' && !this.zipCode.trim()) {
         this.errorMessage = "Please enter a valid Zip Code.";
         this.isLoading = false;
         return;
-      } else if (!this.useZipCode && (!this.city.trim() || !this.state.trim())) {
+      } else if (this.locationMode === 'city' && (!this.city.trim() || !this.state.trim())) {
         this.errorMessage = "Please enter a valid City and State.";
         this.isLoading = false;
         return;
       }
 
-      const queryType = this.useZipCode ? "zipcode" : "city";
-      const queryValue = this.useZipCode
-        ? this.zipCode.trim()
-        : `${this.city.trim()},${this.state.trim()}`;
+      const fetchData = () => {
+        let queryType = '';
+        let queryValue = '';
 
-      fetch(
-        `http://localhost:9000/api/restaurants/fetch?queryType=${queryType}&queryValue=${queryValue}`
-      )
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Failed to fetch restaurants");
+        if (this.locationMode === 'current') {
+          if (this.userLat === null || this.userLng === null) {
+            this.errorMessage = "Could not determine current location.";
+            this.isLoading = false;
+            return;
           }
-          return response.json();
-        })
-        .then((data) => {
-          // Randomly assign kidFriendly to each restaurant if not already present
-          this.restaurants = data.map(r => ({
-            ...r,
-            kidFriendly: Math.random() > 0.5 // Random true/false
-          }));
-          if (!data.length) {
-            this.errorMessage = "No restaurants found. Try another search.";
-          }
+          queryType = 'latlng';
+          queryValue = `${this.userLat},${this.userLng}`;
+        } else if (this.locationMode === 'zip') {
+          queryType = 'zipcode';
+          queryValue = this.zipCode.trim();
+        } else if (this.locationMode === 'city') {
+          queryType = 'city';
+          queryValue = `${this.city.trim()},${this.state.trim()}`;
+        }
+
+        fetch(
+          `http://localhost:9000/api/restaurants/fetch?queryType=${queryType}&queryValue=${queryValue}`
+        )
+          .then((response) => {
+            if (!response.ok) {
+              throw new Error("Failed to fetch restaurants");
+            }
+            return response.json();
+          })
+          .then((data) => {
+            this.restaurants = data.map(r => ({
+              ...r,
+              kidFriendly: Math.random() > 0.5
+            }));
+            if (!data.length) {
+              this.errorMessage = "No restaurants found. Try another search.";
+            }
+            this.isLoading = false;
+          })
+          .catch((error) => {
+            console.error("Error fetching restaurants:", error);
+            this.errorMessage = "An error occurred while fetching restaurants.";
+            this.isLoading = false;
+          });
+      };
+
+      if (this.locationMode === 'current') {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition((pos) => {
+            this.userLat = pos.coords.latitude;
+            this.userLng = pos.coords.longitude;
+            fetchData();
+          }, (err) => {
+            console.warn("Geolocation error:", err);
+            this.errorMessage = "Failed to get current location. Please allow location access or choose another mode.";
+            this.isLoading = false;
+          });
+        } else {
+          this.errorMessage = "Geolocation not supported by browser.";
           this.isLoading = false;
-        })
-        .catch((error) => {
-          console.error("Error fetching restaurants:", error);
-          this.errorMessage = "An error occurred while fetching restaurants.";
-          this.isLoading = false;
-        });
+        }
+      } else {
+        fetchData();
+      }
     },
     surpriseMe() {
       if (!this.restaurants.length) return;
       const randomIndex = Math.floor(Math.random() * this.restaurants.length);
-      alert(`How about ${this.restaurants[randomIndex].name}?`);
+      const [randomRestaurant] = this.restaurants.splice(randomIndex, 1); // Remove the random restaurant
+    this.restaurants.unshift(randomRestaurant); // Add it to the top of the array (deck)
+    this.activeIndex = 0; // Reset the active index to the top of the deck
     },
     getCardStyle(index) {
       if (index === this.activeIndex) {
@@ -292,17 +366,63 @@ export default {
     toggleVotingPanel() {
       this.isVotingOpen = !this.isVotingOpen;
     },
-    voteForOption(index) {
-      this.votingOptions[index].votes += 1;
-      this.justVotedIndex = index;
-      setTimeout(() => {
-        this.justVotedIndex = null;
-      }, 800);
+    createVoteSession() {
+      if (!this.isAuthenticated) {
+        this.voteError = "You must be logged in to create a session.";
+        return;
+      }
+
+      const queryType = this.locationMode === 'zip' ? 'zipcode' :
+                        this.locationMode === 'city' ? 'city' : 'latlng';
+      let queryValue = '';
+
+      if (this.locationMode === 'zip') {
+        queryValue = this.zipCode.trim();
+      } else if (this.locationMode === 'city') {
+        queryValue = `${this.city.trim()},${this.state.trim()}`;
+      } else {
+        navigator.geolocation.getCurrentPosition((pos) => {
+            this.userLat = pos.coords.latitude;
+            this.userLng = pos.coords.longitude;
+            queryValue = `${this.userLat},${this.userLng}`;
+            this.fetchData(queryType, queryValue); 
+          }, (err) => {
+            console.warn("Geolocation error:", err);
+            this.errorMessage = "Failed to get current location. Please allow location access or choose another mode.";
+            this.isLoading = false;
+          });
+        
+      }
+
+      fetch(`http://localhost:9000/api/votes?queryType=${queryType}&queryValue=${queryValue}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.$store.state.token}`
+        }
+      })
+      .then(res => res.ok ? res.text() : Promise.reject('Failed to create vote session'))
+      .then(code => {
+        this.voteRoomCode = code;
+      })
+      .catch(err => {
+        console.error(err);
+        this.voteError = "Could not create vote session.";
+      });
+    },
+    goToVoteSession() {
+      if (!this.voteRoomCode) return;
+      this.$router.push({ name: 'vote-session', params: { roomCode: this.voteRoomCode }});
+    },
+    joinExistingSession() {
+      if (!this.joinCode.trim()) return;
+      this.$router.push({ name: 'vote-session', params: { roomCode: this.joinCode.trim() }});
     },
     handleMouseDown(e) {
       this.startX = e.clientX;
       this.isDragging = true;
       this.swipeDirection = null;
+      document.addEventListener("mousemove", this.handleMouseMove);
+      document.addEventListener("mouseup", this.handleMouseUp);
     },
     handleMouseMove(e) {
       if (!this.isDragging) return;
@@ -354,6 +474,7 @@ export default {
 
       this.currentX = 0;
     },
+
     animateCardRemoval(card, callback) {
       card.style.transition = "transform 0.5s ease, opacity 0.5s ease";
       card.style.transform += " translateY(-200px)";
@@ -408,6 +529,8 @@ export default {
       });
     },
   },
+
+    
   watch: {
     restaurants(newRestaurants) {
       if (newRestaurants.length) {
@@ -424,6 +547,32 @@ export default {
 </script>
 
 <style scoped>
+.logo-card-container {
+  display: flex; /* Align logo and card stack side by side */
+  gap: 20px; /* Space between logo and card stack */
+  align-items: flex-start; /* Align logo to the top of the card stack */
+  margin-top: 20px; /* Adjust based on filters or layout */
+}
+
+.logo-container {
+  width: 100px; /* Adjust width as needed */
+  height: auto;
+  opacity: 0; /* Initially hidden */
+  transform: translateY(-20px); /* Adjust fade-in position */
+  transition: opacity 1s ease, transform 1s ease;
+}
+
+.logo-container.fade-in {
+  opacity: 1;
+  transform: translateY(0); /* Reset position on fade-in */
+}
+
+
+#logo {
+  width: 300px; /* Adjust the size of the logo */
+  height: auto; /* Maintain aspect ratio */
+}
+
 
 body {
   background-color: #fff7ed;
@@ -433,6 +582,7 @@ body {
   max-width: 900px;
   margin: 0 auto;
   font-family: "Lato", sans-serif;
+ 
 }
 
 h2 {
@@ -440,6 +590,7 @@ h2 {
   margin-bottom: 2rem;
   font-family: "Playfair Display", serif;
   font-size: 2rem;
+  
 }
 
 /* Filter Cards */
@@ -502,7 +653,7 @@ h2 {
   color: #333;
 }
 
-.location-inputs input {
+.location-inputs input, select {
   padding: 0.5rem;
   border: 1px solid #ddd;
   border-radius: 4px;
@@ -514,7 +665,7 @@ h2 {
   gap: 0.5rem;
 }
 
-.btn-switch, .btn-search, .btn-more-filters {
+.btn-search, .btn-more-filters {
   background: #e0c9a6;
   color: #fff;
   padding: 0.6rem 1rem;
@@ -526,7 +677,7 @@ h2 {
   white-space: nowrap;
   transition: background 0.3s ease;
 }
-.btn-switch:hover, .btn-search:hover, .btn-more-filters:hover {
+.btn-search:hover, .btn-more-filters:hover {
   background: #e7b76b;
 }
 
@@ -555,7 +706,7 @@ h2 {
 }
 
 /* Secondary Filters Inside Panel */
-.secondary-filters {
+.secondary-filters, .join-session {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -563,7 +714,7 @@ h2 {
   flex-wrap: wrap;
 }
 
-.search-box {
+.search-box, .join-session {
   flex: 1;
   max-width: 180px;
   padding: 0.5rem;
@@ -631,6 +782,7 @@ h2 {
 
 /* Stack Interface */
 .stack-interface {
+  flex: 1;
   position: relative;
   width: 100%;
   height: 400px;
@@ -638,6 +790,7 @@ h2 {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  z-index: 102;
 }
 
 /* Restaurant Card Wrapper */
@@ -705,6 +858,28 @@ h2 {
   right: 0;
 }
 
+
+/* Voting Trigger Button */
+#open-voting-btn {
+  position: fixed;
+  bottom: 40px;
+  right: 20px;
+  background-color: #e0c9a6;
+  color: white;
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Lato', sans-serif;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+
 .voting-header {
   background-color: #e0c9a6;
   color: white;
@@ -748,102 +923,39 @@ h2 {
   font-family: 'Lato', sans-serif;
 }
 
-.voting-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.create-session, .join-session {
+  margin-bottom: 1rem;
 }
 
-.voting-list li {
-  background: #ffffff;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  padding: 10px;
-  transition: background-color 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.voting-list li.voted {
-  background-color: #e0f7df;
-}
-
-.voting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.voting-item .info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.restaurant-icon {
-  font-size: 1.2rem;
-}
-.restaurant-name {
-  font-weight: bold;
-  font-size: 1rem;
-  color: #5c5c5c;
-}
-
-.actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.votes {
+.create-session button {
+  background: #e0c9a6;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 4px;
   font-size: 0.9rem;
-  color: #555;
+  font-weight: bold;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.3s ease;
+
 }
-.votes strong {
-  color: #333;
+.invite-code {
+  margin-top: 1rem;
+  text-align: center;
 }
 
-.vote-btn {
-  background-color: #e0c9a6;
+.btn-go, .btn-join {
+  background: #e0c9a6;
   color: #fff;
   border: none;
-  border-radius: 5px;
-  padding: 5px 12px;
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: bold;
-  transition: background-color 0.3s ease, transform 0.1s ease;
+  margin-top: 0.5rem;
 }
-.vote-btn:hover {
-  background-color: #e0c9a6;
-}
-.vote-btn:active {
-  transform: scale(0.95);
-}
-
-/* Voting Trigger Button */
-#open-voting-btn {
-  position: fixed;
-  bottom: 40px;
-  right: 20px;
-  background-color: #e0c9a6;
-  color: white;
-  padding: 10px 15px;
-  border-radius: 8px;
-  border: none;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s, background-color 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'Lato', sans-serif;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-#open-voting-btn:hover {
-  transform: scale(1.05);
-  background-color: #a56d4e;
-}
-#open-voting-btn .icon {
-  font-size: 1.2rem;
+.btn-go:hover, .btn-join:hover {
+  background: #e7b76b;
 }
 
 /* Transitions */

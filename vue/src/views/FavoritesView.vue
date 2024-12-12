@@ -1,8 +1,17 @@
 <template>
+  <body>
   <div class="favorites-view">
     <h2>Your Favorite Restaurants</h2>
 
-    <div v-if="isLoading" class="loading">Loading favorites...</div>
+     <!-- Loader: Display when isLoading is true -->
+     <div v-if="isLoading" class="loader-container">
+      <div class="loader">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+      </div>
+    </div>
 
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
@@ -20,6 +29,7 @@
       <p>You don't have any favorites yet!</p>
     </div>
   </div>
+  </body>
 </template>
 
 <script>
@@ -77,8 +87,17 @@ export default {
 
 <style scoped>
 
+h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  font-family: "Playfair Display", serif;
+  font-size: 2rem;
+  color: #5c5c5c;
+}
+
+
 body {
-  background-color: #e0c9a6;
+  background-color: #fff7ed;
 }
 
 .favorites-view {
@@ -105,9 +124,83 @@ body {
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
 }
 
-.loading {
-  text-align: center;
-  font-size: 1.5rem;
+
+
+
+/* Loader by AbanoubMagdy1 */
+.loader-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #fff7ed; /* Optional: Add a semi-transparent background */
+  z-index: 1000; /* Ensure it appears above other content */
+}
+
+.loader {
+  --dim: 6rem;
+  width: var(--dim);
+  height: var(--dim);
+  position: relative;
+  animation: spin988 2s linear infinite;
+
+
+}
+
+.loader .circle {
+  --color: #e0c9a6;
+  --dim: 2rem;
+  width: var(--dim);
+  height: var(--dim);
+  background-color: var(--color);
+  border-radius: 50%;
+  position: absolute;
+}
+
+.loader .circle:nth-child(1) {
+  top: 0;
+  left: 0;
+}
+
+.loader .circle:nth-child(2) {
+  top: 0;
+  right: 0;
+}
+
+.loader .circle:nth-child(3) {
+  bottom: 0;
+  left: 0;
+}
+
+.loader .circle:nth-child(4) {
+  bottom: 0;
+  right: 0;
+}
+
+@keyframes spin988 {
+  0% {
+    transform: scale(1) rotate(0);
+  }
+
+  20%, 25% {
+    transform: scale(1.3) rotate(90deg);
+  }
+
+  45%, 50% {
+    transform: scale(1) rotate(180deg);
+  }
+
+  70%, 75% {
+    transform: scale(1.3) rotate(270deg);
+  }
+
+  95%, 100% {
+    transform: scale(1) rotate(360deg);
+  }
 }
 
 .error-message {
