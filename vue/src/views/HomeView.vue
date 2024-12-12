@@ -1,124 +1,121 @@
 <template>
   <body>
-    <div class="home-view">
-      <h2>Find Restaurants Near You</h2>
+  <div class="home-view">
+    <h2>Find Restaurants Near You</h2>
 
-      <!-- Location Filters -->
-      <div class="filter-card">
-        <h3 class="filter-title">Search by Location</h3>
-        <p class="filter-subtitle">
-          Quickly find restaurants by providing a location method below.
-        </p>
-        <div class="location-filters">
-          <div class="location-inputs">
-            <!-- Location Mode Selection -->
+    <!-- Location Filters -->
+    <div class="filter-card">
+      <h3 class="filter-title">Search by Location</h3>
+      <p class="filter-subtitle">
+        Quickly find restaurants by providing a location method below.
+      </p>
+      <div class="location-filters">
+        <div class="location-inputs">
+          <!-- Location Mode Selection -->
+          <div class="input-group">
+            <label>Location Mode</label>
+            <select v-model="locationMode" @change="clearError">
+              <option value="current">Current Location</option>
+              <option value="zip">Zip Code</option>
+              <option value="city">City/State</option>
+            </select>
+          </div>
+
+          <div class="input-group" v-if="locationMode === 'zip'">
+            <label for="zip-code">Zip Code</label>
+            <input
+              id="zip-code"
+              type="text"
+              v-model="zipCode"
+              placeholder="e.g. 90210"
+              @input="clearError"
+            />
+          </div>
+
+          <div class="city-state-inputs" v-else-if="locationMode === 'city'">
             <div class="input-group">
-              <label>Location Mode</label>
-              <select v-model="locationMode" @change="clearError">
-                <option value="current">Current Location</option>
-                <option value="zip">Zip Code</option>
-                <option value="city">City/State</option>
-              </select>
-            </div>
-
-            <div class="input-group" v-if="locationMode === 'zip'">
-              <label for="zip-code">Zip Code</label>
+              <label for="city">City</label>
               <input
-                id="zip-code"
+                id="city"
                 type="text"
-                v-model="zipCode"
-                placeholder="e.g. 90210"
+                v-model="city"
+                placeholder="e.g. Los Angeles"
                 @input="clearError"
               />
             </div>
-
-            <div class="city-state-inputs" v-else-if="locationMode === 'city'">
-              <div class="input-group">
-                <label for="city">City</label>
-                <input
-                  id="city"
-                  type="text"
-                  v-model="city"
-                  placeholder="e.g. Los Angeles"
-                  @input="clearError"
-                />
-              </div>
-              <div class="input-group">
-                <label for="state">State</label>
-                <input
-                  id="state"
-                  type="text"
-                  v-model="state"
-                  placeholder="CA"
-                  maxlength="2"
-                  @input="clearError"
-                />
-              </div>
-            </div>
-
-          </div>
-
-          <div class="location-buttons">
-            <button class="btn-search" @click="fetchRestaurants">Search</button>
-
-
-            <div v-if="filtersPanelOpen">
-            <button v-if="filtersPanelOpen" class="btn-more-filters" @click="toggleFiltersPanel">
-              Less Filters  
-              </button>
-              </div>
-              <div v-else>
-            <button class="btn-more-filters" @click="toggleFiltersPanel">
-              More Filters
-            </button>
+            <div class="input-group">
+              <label for="state">State</label>
+              <input
+                id="state"
+                type="text"
+                v-model="state"
+                placeholder="CA"
+                maxlength="2"
+                @input="clearError"
+              />
             </div>
           </div>
         </div>
 
-        <!-- Dynamic Filters Panel -->
-        <transition name="slide-fade">
-          <div v-if="filtersPanelOpen" class="dynamic-filters-panel">
-            <h4 class="panel-title">Refine Your Search</h4>
-            <p class="panel-subtitle">
-              Narrow down results and find exactly what you’re craving.
-            </p>
+        <div class="location-buttons">
+          <button class="btn-search" @click="fetchRestaurants">Search</button>
 
-            <div class="secondary-filters">
-              <input 
-                type="text" 
-                v-model="searchQuery" 
-                placeholder="Search by name..."
-                class="search-box"
-              />
-
-              <div class="checkbox-filters">
-                <label>
-                  <input type="checkbox" v-model="filterOpenNow" /> Open Now
-                </label>
-                <label>
-                  <input type="checkbox" v-model="filterHighRating" /> 4★ & Up
-                </label>
-                <label>
-                  <input type="checkbox" v-model="filterKidFriendly" /> Kid Friendly
-                </label>
-              </div>
-
-              <button 
-                class="btn-surprise" 
-                @click="surpriseMe" 
-                :disabled="!restaurants.length"
-              >
-                Surprise Me!
-              </button>
-            </div>
+          <div>
+            <button
+              class="btn-more-filters"
+              @click="toggleFiltersPanel"
+            >
+              {{ filtersPanelOpen ? 'Less Filters' : 'More Filters' }}
+            </button>
           </div>
-        </transition>
+        </div>
       </div>
 
-      <!-- Error Message -->
-      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+      <!-- Dynamic Filters Panel -->
+      <transition name="slide-fade">
+        <div v-if="filtersPanelOpen" class="dynamic-filters-panel">
+          <h4 class="panel-title">Refine Your Search</h4>
+          <p class="panel-subtitle">
+            Narrow down results and find exactly what you’re craving.
+          </p>
 
-      <div class="logo-card-container">
+          <div class="secondary-filters">
+            <input 
+              type="text" 
+              v-model="searchQuery" 
+              placeholder="Search by name..."
+              class="search-box"
+            />
+
+            <div class="checkbox-filters">
+              <label>
+                <input type="checkbox" v-model="filterOpenNow" /> Open Now
+              </label>
+              <label>
+                <input type="checkbox" v-model="filterHighRating" /> 4★ & Up
+              </label>
+              <label>
+                <input type="checkbox" v-model="filterKidFriendly" /> Kid Friendly
+              </label>
+            </div>
+
+            <button 
+              class="btn-surprise" 
+              @click="surpriseMe" 
+              :disabled="!restaurants.length"
+            >
+              Surprise Me!
+            </button>
+          </div>
+        </div>
+      </transition>
+    </div>
+
+    <!-- Error Message -->
+    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+    <!-- Content Container: Logo and Conditional Content -->
+    <div class="content-container">
       <!-- Logo -->
       <div 
         class="logo-container" 
@@ -127,78 +124,71 @@
       >
         <img src="/Images/headerlogo.png" alt="Logo" id="logo" />
       </div>
-      </div>
 
-      <!-- Restaurant Card Stack -->
-      <div v-if="filteredRestaurants.length" class="stack-interface">
-        <div
-          v-for="(restaurant, index) in filteredRestaurants"
-          :key="restaurant.id || index"
-          class="restaurant-card-wrapper"
-          :style="getCardStyle(index)"
-          ref="cards"
-          :class="{
-            'swipe-right': index === activeIndex && swipeDirection === 'right',
-            'swipe-left': index === activeIndex && swipeDirection === 'left'
-          }"
-        >
-          <div class="overlay" v-if="index === activeIndex && (swipeDirection === 'right' || swipeDirection === 'left')">
-            <div v-if="swipeDirection === 'right'" class="check-mark">✔</div>
-            <div v-if="swipeDirection === 'left'" class="x-mark">✘</div>
-          </div>
-          <RestaurantCard :restaurant="restaurant" />
-        </div>
-      </div>
-
-      <div v-else-if="!isLoading && hasSearched" class="no-results">
-        No restaurants found. Try another search or adjust your filters.
-      </div>
-      <div v-if="isLoading" class="loading">Loading restaurants...</div>
-
-      <!-- Voting Trigger Button -->
-      <button id="open-voting-btn" @click="toggleVotingPanel">
-        <span class="icon">🗳️</span> Vote
-      </button>
-
-      <!-- Slide-Out Voting Panel -->
-      <div id="voting-panel" :class="{ visible: isVotingOpen }">
-        <header class="voting-header">
-          <h3>Group Voting</h3>
-          <p class="subtitle">Create or Join a group vote</p>
-          <button @click="toggleVotingPanel" class="close-btn">×</button>
-        </header>
-        <div class="voting-content">
-          <div class="create-session">
-            <h4>Create a New Vote Session</h4>
-            <button @click="createVoteSession">Create Session</button>
-            <div v-if="voteRoomCode" class="invite-code">
-              <p>Your room code: <strong>{{ voteRoomCode }}</strong></p>
-              <p><button @click="goToVoteSession" class="btn-go">Go to Voting Page</button></p>
+      <!-- Conditional Content: Stack Interface, No Results, Loading -->
+      <div class="conditional-content">
+        <div v-if="filteredRestaurants.length" class="stack-interface">
+          <div
+            v-for="(restaurant, index) in filteredRestaurants"
+            :key="restaurant.id || index"
+            class="restaurant-card-wrapper"
+            :style="getCardStyle(index)"
+            ref="cards"
+            :class="{
+              'swipe-right': index === activeIndex && swipeDirection === 'right',
+              'swipe-left': index === activeIndex && swipeDirection === 'left'
+            }"
+          >
+            <div class="overlay" v-if="index === activeIndex && (swipeDirection === 'right' || swipeDirection === 'left')">
+              <div v-if="swipeDirection === 'right'" class="check-mark">✔</div>
+              <div v-if="swipeDirection === 'left'" class="x-mark">✘</div>
             </div>
+            <RestaurantCard :restaurant="restaurant" />
           </div>
-          <hr>
-          <div class="join-session">
-            <h4>Join an Existing Session</h4>
-            <input v-model="searchQuery" placeholder="Enter room code" />
-            <button @click="joinExistingSession" class="btn-join">Join Session</button>
-          </div>
-          <div v-if="voteError" class="error-message">{{ voteError }}</div>
         </div>
+        <div v-else-if="!isLoading && hasSearched" class="no-results">
+          No restaurants found. Try another search or adjust your filters.
+        </div>
+        <div v-if="isLoading" class="loading">Loading restaurants...</div>
       </div>
-
-      <!-- Audio elements for swipe sounds -->
-      <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
-      <audio ref="rejectSound" src="/Images/x.mp3" preload="auto"></audio>
     </div>
-    <br>
-    <br>
-    <br>
-    <br>
-  
-  
-  <br>
+
+    <!-- Voting Trigger Button -->
+    <button id="open-voting-btn" @click="toggleVotingPanel">
+      <span class="icon">🗳️</span> Vote
+    </button>
+
+    <!-- Slide-Out Voting Panel -->
+    <div id="voting-panel" :class="{ visible: isVotingOpen }">
+      <header class="voting-header">
+        <h3>Group Voting</h3>
+        <p class="subtitle">Create or Join a group vote</p>
+        <button @click="toggleVotingPanel" class="close-btn">×</button>
+      </header>
+      <div class="voting-content">
+        <div class="create-session">
+          <h4>Create a New Vote Session</h4>
+          <button @click="createVoteSession">Create Session</button>
+          <div v-if="voteRoomCode" class="invite-code">
+            <p>Your room code: <strong>{{ voteRoomCode }}</strong></p>
+            <p><button @click="goToVoteSession" class="btn-go">Go to Voting Page</button></p>
+          </div>
+        </div>
+        <hr>
+        <div class="join-session">
+          <h4>Join an Existing Session</h4>
+          <input v-model="searchQuery" placeholder="Enter room code" />
+          <button @click="joinExistingSession" class="btn-join">Join Session</button>
+        </div>
+        <div v-if="voteError" class="error-message">{{ voteError }}</div>
+      </div>
+    </div>
+
+    <!-- Audio elements for swipe sounds -->
+    <audio ref="successSound" src="/Images/check.mp3" preload="auto"></audio>
+    <audio ref="rejectSound" src="/Images/x.mp3" preload="auto"></audio>
+  </div>
   </body>
-  
 </template>
 
 <script>
@@ -208,7 +198,6 @@ export default {
   components: { RestaurantCard },
   data() {
     return {
-
       showLogo: false,
       searchQuery: "",
       isVotingOpen: false,
@@ -249,8 +238,6 @@ export default {
     },
   },
   methods: {
-    
-    
     toggleLocationType() {
       // No longer needed since using locationMode
       this.clearError();
@@ -262,7 +249,6 @@ export default {
       this.filtersPanelOpen = !this.filtersPanelOpen;
     },
     fetchRestaurants() {
-      
       this.errorMessage = "";
       this.isLoading = true;
       this.hasSearched = true;
@@ -350,8 +336,8 @@ export default {
       if (!this.restaurants.length) return;
       const randomIndex = Math.floor(Math.random() * this.restaurants.length);
       const [randomRestaurant] = this.restaurants.splice(randomIndex, 1); // Remove the random restaurant
-    this.restaurants.unshift(randomRestaurant); // Add it to the top of the array (deck)
-    this.activeIndex = 0; // Reset the active index to the top of the deck
+      this.restaurants.unshift(randomRestaurant); // Add it to the top of the array (deck)
+      this.activeIndex = 0; // Reset the active index to the top of the deck
     },
     getCardStyle(index) {
       if (index === this.activeIndex) {
@@ -530,7 +516,6 @@ export default {
     },
   },
 
-    
   watch: {
     restaurants(newRestaurants) {
       if (newRestaurants.length) {
@@ -547,19 +532,33 @@ export default {
 </script>
 
 <style scoped>
-.logo-card-container {
-  display: flex; /* Align logo and card stack side by side */
-  gap: 20px; /* Space between logo and card stack */
-  align-items: flex-start; /* Align logo to the top of the card stack */
+body {
+  font-family: "Lato", sans-serif;
+  background-color: #fff7ed;
+  color: #5c5c5c;
+  margin: 0;
+  padding: 0;
+}
+
+/* Content Container: Align Logo and Card Stack Horizontally */
+.content-container {
+  display: flex;
+  align-items: flex-start; /* Align items to the top */
+  gap: 0px; /* Space between logo and card stack */
+  position: relative; /* Establish a new stacking context */
   margin-top: 20px; /* Adjust based on filters or layout */
 }
 
+/* Logo Container */
 .logo-container {
-  width: 100px; /* Adjust width as needed */
-  height: auto;
+  position: absolute; /* Prevent flex-grow and flex-shrink */
+  width: 300px; /* Increased width for larger logo */
   opacity: 0; /* Initially hidden */
-  transform: translateY(-20px); /* Adjust fade-in position */
+  transform: translateY(-20px); /* Initial position for fade-in */
   transition: opacity 1s ease, transform 1s ease;
+  z-index: 1; /* Ensure it's below the stack */
+  margin-top: 25px;
+  margin-left: 15px;
 }
 
 .logo-container.fade-in {
@@ -567,12 +566,12 @@ export default {
   transform: translateY(0); /* Reset position on fade-in */
 }
 
-
+/* Logo Image */
 #logo {
-  width: 300px; /* Adjust the size of the logo */
+  width: 100%; /* Make the logo take full width of the container */
   height: auto; /* Maintain aspect ratio */
+  opacity: 0.7
 }
-
 
 body {
   background-color: #fff7ed;
@@ -582,7 +581,6 @@ body {
   max-width: 900px;
   margin: 0 auto;
   font-family: "Lato", sans-serif;
- 
 }
 
 h2 {
@@ -590,7 +588,6 @@ h2 {
   margin-bottom: 2rem;
   font-family: "Playfair Display", serif;
   font-size: 2rem;
-  
 }
 
 /* Filter Cards */
@@ -780,17 +777,27 @@ h2 {
   font-size: 1.5rem;
 }
 
-/* Stack Interface */
-.stack-interface {
-  flex: 1;
+/* Conditional Content: Stack Interface */
+.conditional-content {
+  flex: 1; /* Allow the conditional content to take up remaining space */
   position: relative;
-  width: 100%;
-  height: 400px;
+  height: 400px; /* Same as stack-interface */
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  z-index: 102;
+  z-index: 2; /* Higher than logo to allow overlapping */
+}
+
+/* Stack Interface */
+.stack-interface {
+  width: 100%; /* Take full width of conditional-content */
+  height: 100%; /* Full height */
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
 /* Restaurant Card Wrapper */
@@ -858,7 +865,6 @@ h2 {
   right: 0;
 }
 
-
 /* Voting Trigger Button */
 #open-voting-btn {
   position: fixed;
@@ -878,7 +884,6 @@ h2 {
   font-family: 'Lato', sans-serif;
   box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-
 
 .voting-header {
   background-color: #e0c9a6;
@@ -938,7 +943,6 @@ h2 {
   cursor: pointer;
   white-space: nowrap;
   transition: background 0.3s ease;
-
 }
 .invite-code {
   margin-top: 1rem;
@@ -967,4 +971,25 @@ h2 {
   transform: translateY(-10px);
 }
 
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .content-container {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .logo-container {
+    width: 150px; /* Adjusted for smaller screens */
+  }
+
+  .conditional-content {
+    width: 100%;
+    height: auto;
+  }
+
+  .stack-interface {
+    width: 100%;
+    height: 400px; /* Or adjust as needed */
+  }
+}
 </style>
