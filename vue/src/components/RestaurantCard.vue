@@ -24,10 +24,11 @@
       <p v-if="restaurant.hoursInterval">🕒 {{ restaurant.hoursInterval }}</p>
       
       <!-- Is Open Now -->
-      <p>
-        <span v-if="restaurant.openNow" class="open-now">✅ Open Now</span>
-        <span v-else class="closed">❌ Closed</span>
-      </p>
+      <!-- <p>
+  <span v-if="isOpenNow" class="open-now">✅ Open Now</span>
+  <span v-else class="closed">❌ Closed</span>
+</p> -->
+
 
       <!-- Beer and Wine -->
       <div class="beverages">
@@ -59,10 +60,36 @@ export default {
       address: "Unknown Address",
       rating: "N/A",
       photo: null,
+      opening_hours: null,
     }),
     },
   },
+  computed: {
+    isOpenNow() {
+      // Check if `opening_hours` or `openNow` is available
+      if (this.restaurant.openNow !== undefined) {
+        return this.restaurant.openNow; // Use provided boolean
+      }
+      // If detailed opening hours are available, process them
+      if (this.restaurant.opening_hours?.periods) {
+        return this.checkOpenNow(this.restaurant.opening_hours.periods);
+      }
+      return false; // Default to closed
+    },
+  },
   methods: {
+    checkOpenNow(periods) {
+      const now = new Date();
+      const currentDay = now.getDay(); // Day of week (0=Sunday)
+      const currentTime = now.getHours() * 100 + now.getMinutes(); // Time in HHMM format
+
+      // Find today's opening and closing times
+      const todayPeriod = periods.find((period) => period.day === currentDay);
+      if (!todayPeriod) return false;
+
+      const { open, close } = todayPeriod;
+      return currentTime >= open && currentTime < close;
+    },
     goToWebsite() {
       if (this.restaurant.website) {
         window.open(this.restaurant.website, "_blank");
