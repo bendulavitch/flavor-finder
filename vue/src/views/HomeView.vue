@@ -177,7 +177,7 @@
         <hr>
         <div class="join-session">
           <h4>Join an Existing Session</h4>
-          <input v-model="searchQuery" placeholder="Enter room code" />
+          <input v-model="joinCode" placeholder="Enter room code" />
           <button @click="joinExistingSession" class="btn-join">Join Session</button>
         </div>
         <div v-if="voteError" class="error-message">{{ voteError }}</div>
